@@ -10,7 +10,7 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ["${mode}"])`,
+        `call denops#request('${denops.name}', 'showToast', ['${mode}'])`,
       );
     });
   });
@@ -21,7 +21,9 @@ export const main: Entrypoint = (denops) => {
 
       const buf = await denops.call("nvim_create_buf", false, true);
       await denops.call("nvim_buf_set_lines", buf, 0, -1, false, [
+        "",
         ` ${message}`,
+        "",
       ]);
 
       const width = await denops.call("nvim_get_option", "columns");
@@ -30,7 +32,7 @@ export const main: Entrypoint = (denops) => {
       assert(height, is.Number);
 
       const windowWidth = message.length + 2;
-      const windowHeight = 1;
+      const windowHeight = 3;
       const opts = {
         relative: "editor",
         width: windowWidth,
