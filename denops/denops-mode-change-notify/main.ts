@@ -1,8 +1,20 @@
 import type { Entrypoint } from "jsr:@denops/std";
+import * as autocmd from "jsr:@denops/std/autocmd";
 
 import { assert, is } from "jsr:@core/unknownutil";
 
 export const main: Entrypoint = (denops) => {
+  autocmd.group(denops, "mode-change-notify", (helper) => {
+    ["Insert", "Normal", "Visual"].forEach((mode) => {
+      const initial = mode.slice(0, 1).toLowerCase();
+      helper.define(
+        "ModeChanged",
+        `*:${initial}`,
+        `call denops#request('${denops.name}', 'showToast', ["${mode}"])`,
+      );
+    });
+  });
+
   denops.dispatcher = {
     async showToast(message: unknown): Promise<void> {
       assert(message, is.String);
