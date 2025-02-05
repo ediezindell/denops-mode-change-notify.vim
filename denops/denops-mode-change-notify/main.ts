@@ -10,14 +10,14 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ['${mode}'])`,
+        `call denops#request('${denops.name}', 'showToast', ['${mode}', 500])`,
       );
     });
   });
-
   denops.dispatcher = {
-    async showToast(message: unknown): Promise<void> {
+    async showToast(message: unknown, timeout: unknown): Promise<void> {
       assert(message, is.String);
+      assert(timeout, is.Number);
 
       const buf = await denops.call("nvim_create_buf", false, true);
       await denops.call("nvim_buf_set_lines", buf, 0, -1, false, [
@@ -46,7 +46,7 @@ export const main: Entrypoint = (denops) => {
       const win = await denops.call("nvim_open_win", buf, false, opts);
       setTimeout(async () => {
         await denops.call("nvim_win_close", win, true);
-      }, 2000);
+      }, timeout);
     },
   };
 };
