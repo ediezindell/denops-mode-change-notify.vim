@@ -1,5 +1,6 @@
 import type { Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
+import * as nvim from "jsr:@denops/std/function/nvim";
 
 import { assert, is } from "jsr:@core/unknownutil";
 
@@ -19,21 +20,24 @@ export const main: Entrypoint = (denops) => {
       assert(message, is.String);
       assert(timeout, is.Number);
 
-      const buf = await denops.call("nvim_create_buf", false, true);
-      await denops.call("nvim_buf_set_lines", buf, 0, -1, false, [
+      const buf = await nvim.nvim_create_buf(denops, false, true);
+      assert(buf, is.Number);
+
+      await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, [
         "",
         ` ${message}`,
         "",
       ]);
 
-      const width = await denops.call("nvim_get_option", "columns");
+      const width = await nvim.nvim_get_option_value(denops, "columns", {});
       assert(width, is.Number);
-      const height = await denops.call("nvim_get_option", "lines");
+      const height = await nvim.nvim_get_option_value(denops, "lines", {});
       assert(height, is.Number);
 
       const windowWidth = message.length + 2;
       const windowHeight = 3;
-      const opts = {
+
+      const win = await nvim.nvim_open_win(denops, buf, false, {
         relative: "editor",
         width: windowWidth,
         height: windowHeight,
@@ -41,11 +45,10 @@ export const main: Entrypoint = (denops) => {
         col: (width - windowWidth - 1) / 2,
         style: "minimal",
         border: "rounded",
-      };
+      });
 
-      const win = await denops.call("nvim_open_win", buf, false, opts);
       setTimeout(async () => {
-        await denops.call("nvim_win_close", win, true);
+        await nvim.nvim_win_close(denops, win, true);
       }, timeout);
     },
   };
