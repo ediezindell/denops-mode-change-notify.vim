@@ -11,7 +11,7 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ['${mode}', 5000])`,
+        `call denops#request('${denops.name}', 'showToast', ['${mode}', 500])`,
       );
     });
   });
