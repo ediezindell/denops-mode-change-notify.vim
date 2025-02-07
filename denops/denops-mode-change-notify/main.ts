@@ -11,7 +11,7 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ['${mode}', 500])`,
+        `call denops#request('${denops.name}', 'showToast', ['${mode}', 5000])`,
       );
     });
   });
@@ -45,6 +45,7 @@ export const main: Entrypoint = (denops) => {
         col: (width - windowWidth - 1) / 2,
         style: "minimal",
         border: "rounded",
+        focusable: false,
       });
 
       setTimeout(async () => {
