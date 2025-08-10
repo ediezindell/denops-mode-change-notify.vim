@@ -49,13 +49,9 @@ export const main: Entrypoint = (denops) => {
       });
 
       setTimeout(async () => {
-        try {
-          const isValid = await nvim.nvim_win_is_valid(denops, win);
-          if (isValid) {
-            await nvim.nvim_win_close(denops, win, true);
-          }
-        } catch (error) {
-          console.warn(`Failed to close window: ${error}`);
+        const isValid = await nvim.nvim_win_is_valid(denops, win);
+        if (isValid) {
+          await denops.call("pcall", "nvim_win_close", win, true);
         }
       }, timeout);
     },
