@@ -51,6 +51,7 @@ export const main: Entrypoint = (denops) => {
       setTimeout(async () => {
         try {
           const isValid = await nvim.nvim_win_is_valid(denops, win);
+          assert(isValid, is.Boolean);
           if (isValid) {
             await nvim.nvim_win_close(denops, win, true);
           }
