@@ -138,12 +138,46 @@ export const main: Entrypoint = (denops) => {
       );
       assert(border, is.String);
 
+      const position = await vars.g.get(
+        denops,
+        "mode_change_notify_position",
+        "center",
+      );
+      assert(position, is.String);
+
+      let row: number;
+      let col: number;
+      const margin = 1;
+
+      switch (position) {
+        case "top_left":
+          row = margin;
+          col = margin;
+          break;
+        case "top_right":
+          row = margin;
+          col = width - windowWidth - margin;
+          break;
+        case "bottom_left":
+          row = height - windowHeight - margin;
+          col = margin;
+          break;
+        case "bottom_right":
+          row = height - windowHeight - margin;
+          col = width - windowWidth - margin;
+          break;
+        default: // center
+          row = Math.floor((height - windowHeight) / 2);
+          col = Math.floor((width - windowWidth) / 2);
+          break;
+      }
+
       const win = await nvim.nvim_open_win(denops, buf, false, {
         relative: "editor",
         width: windowWidth,
         height: windowHeight,
-        row: Math.floor((height - windowHeight) / 2),
-        col: Math.floor((width - windowWidth) / 2),
+        row,
+        col,
         style: "minimal",
         border,
         focusable: false,
