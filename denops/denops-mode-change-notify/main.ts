@@ -125,6 +125,13 @@ export const main: Entrypoint = (denops) => {
       const height = await nvim.nvim_get_option_value(denops, "lines", {});
       assert(height, is.Number);
 
+      const border = await vars.g.get(
+        denops,
+        "mode_change_notify_border_style",
+        "rounded",
+      );
+      assert(border, is.String);
+
       const win = await nvim.nvim_open_win(denops, buf, false, {
         relative: "editor",
         width: windowWidth,
@@ -132,7 +139,7 @@ export const main: Entrypoint = (denops) => {
         row: Math.floor((height - windowHeight) / 2),
         col: Math.floor((width - windowWidth) / 2),
         style: "minimal",
-        border: "rounded",
+        border,
         focusable: false,
       });
 
