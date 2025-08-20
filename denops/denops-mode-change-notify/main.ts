@@ -115,43 +115,66 @@ const modeNameMap: Record<string, string> = {
   "R": "Replace",
 };
 
+type Options = {
+  enabled_modes: string[];
+  style: "text" | "ascii_outline" | "ascii_filled";
+  border: string;
+  timeout: number;
+  position: "center" | "top_left" | "top_right" | "bottom_left" | "bottom_right";
+};
+
 export const main: Entrypoint = (denops) => {
-  autocmd.group(denops, "mode-change-notify", (helper) => {
-    vars.g.get(denops, "mode_change_notify_enabled_modes", ["n", "i", "v"]).then(
-      (modes) => {
-        assert(modes, is.ArrayOf(is.String));
-        modes.forEach((initial) => {
-          const modeName = modeNameMap[initial];
-          if (!modeName) {
-            console.warn(`Unknown mode initial: ${initial}`);
-            return;
-          }
-          helper.define(
-            "ModeChanged",
-            `*:${initial}`,
-            `call denops#request('${denops.name}', 'showToast', ['${modeName}'])`,
-          );
-        });
-      },
-    );
-  });
+  const setupAutocommands = async () => {
+    const userOptions = await vars.g.get(denops, "mode_change_notify_options", {});
+    assert(userOptions, is.Record);
+
+    const options: Options = {
+      enabled_modes: ["n", "i", "v"],
+      style: "text",
+      border: "rounded",
+      timeout: 500,
+      position: "center",
+      ...userOptions,
+    };
+
+    autocmd.group(denops, "mode-change-notify", (helper) => {
+      helper.clear();
+      options.enabled_modes.forEach((initial) => {
+        const modeName = modeNameMap[initial];
+        if (!modeName) {
+          console.warn(`Unknown mode initial: ${initial}`);
+          return;
+        }
+        helper.define(
+          "ModeChanged",
+          `*:${initial}`,
+          `call denops#request('${denops.name}', 'showToast', ['${modeName}'])`,
+        );
+      });
+    });
+  };
+
+  setupAutocommands();
+
   denops.dispatcher = {
     async showToast(message: unknown): Promise<void> {
       assert(message, is.String);
 
-      const timeout = await vars.g.get(
+      const userOptions = await vars.g.get(
         denops,
-        "mode_change_notify_timeout",
-        500,
+        "mode_change_notify_options",
+        {},
       );
-      assert(timeout, is.Number);
+      assert(userOptions, is.Record);
 
-      const style = await vars.g.get(
-        denops,
-        "mode_change_notify_style",
-        "text",
-      );
-      assert(style, is.String);
+      const options: Options = {
+        enabled_modes: ["n", "i", "v"],
+        style: "text",
+        border: "rounded",
+        timeout: 500,
+        position: "center",
+        ...userOptions,
+      };
 
       const buf = await nvim.nvim_create_buf(denops, false, true);
       assert(buf, is.Number);
@@ -160,10 +183,10 @@ export const main: Entrypoint = (denops) => {
       let windowWidth: number;
       let windowHeight: number;
 
-      switch (style) {
+      switch (options.style) {
         case "ascii_outline":
         case "ascii_filled": {
-          const artSet = style === "ascii_outline"
+          const artSet = options.style === "ascii_outline"
             ? asciiArtOutline
             : asciiArtFilled;
           const art = artSet[message];
@@ -196,25 +219,11 @@ export const main: Entrypoint = (denops) => {
       const height = await nvim.nvim_get_option_value(denops, "lines", {});
       assert(height, is.Number);
 
-      const border = await vars.g.get(
-        denops,
-        "mode_change_notify_border_style",
-        "rounded",
-      );
-      assert(border, is.String);
-
-      const position = await vars.g.get(
-        denops,
-        "mode_change_notify_position",
-        "center",
-      );
-      assert(position, is.String);
-
       let row: number;
       let col: number;
       const margin = 1;
 
-      switch (position) {
+      switch (options.position) {
         case "top_left":
           row = margin;
           col = margin;
@@ -244,7 +253,7 @@ export const main: Entrypoint = (denops) => {
         row,
         col,
         style: "minimal",
-        border,
+        border: options.border,
         focusable: false,
       });
 
@@ -258,7 +267,8 @@ export const main: Entrypoint = (denops) => {
         } catch (error) {
           console.warn(`Failed to close window: ${error}`);
         }
-      }, timeout);
+      }, options.timeout);
     },
+    reload: setupAutocommands,
   };
 };

@@ -29,89 +29,40 @@ use 'Omochice/denops-mode-change-notify'
 
 ## Configuration
 
-You can customize the notification behavior by setting the following global variables in your `init.vim` or `init.lua`.
-
-### Enabled Modes
-
-Controls which modes will trigger a notification. You provide a list of mode initials.
-
--   **Variable**: `g:mode_change_notify_enabled_modes`
--   **Type**: `List` of `String`
--   **Default**: `['n', 'i', 'v']`
--   **Common values**:
-    -   `'n'`: Normal
-    -   `'i'`: Insert
-    -   `'v'`: Visual
-    -   `'c'`: Command
-    -   `'t'`: Terminal
-    -   `'R'`: Replace
+All options are controlled by a single dictionary variable, `g:mode_change_notify_options`. You only need to specify the values you want to override.
 
 **Example (`init.vim`):**
 ```vim
-" Show notifications for Normal, Insert, Visual, and Command modes
-let g:mode_change_notify_enabled_modes = ['n', 'i', 'v', 'c']
+let g:mode_change_notify_options = {
+  \ 'style': 'ascii_filled',
+  \ 'position': 'bottom_right',
+  \ 'enabled_modes': ['n', 'i', 'v', 'c'],
+  \ 'timeout': 750,
+  \ }
 ```
 
-### Notification Style
+### Available Options
 
-Controls the content of the notification.
+-   **`enabled_modes`**: Controls which modes will trigger a notification.
+    -   **Type**: `List` of `String`
+    -   **Default**: `['n', 'i', 'v']`
+    -   **Common initials**: `'n'` (Normal), `'i'` (Insert), `'v'` (Visual), `'c'` (Command), `'t'` (Terminal), `'R'` (Replace).
 
--   **Variable**: `g:mode_change_notify_style`
--   **Type**: `String`
--   **Default**: `'text'`
--   **Available values**:
-    -   `'text'`: Simple text (e.g., "Normal").
-    -   `'ascii_outline'`: ASCII art with an outline style.
-    -   `'ascii_filled'`: ASCII art with a filled style.
+-   **`style`**: Controls the content of the notification.
+    -   **Type**: `String`
+    -   **Default**: `'text'`
+    -   **Values**: `'text'`, `'ascii_outline'`, `'ascii_filled'`.
 
-**Example (`init.vim`):**
-```vim
-let g:mode_change_notify_style = 'ascii_outline'
-```
+-   **`border`**: Controls the style of the notification window's border.
+    -   **Type**: `String`
+    -   **Default**: `'rounded'`
+    -   **Values**: Any style supported by `nvim_open_win()` (e.g., `'none'`, `'single'`, `'double'`).
 
-### Border Style
+-   **`timeout`**: Controls how long the notification is visible, in milliseconds.
+    -   **Type**: `Number`
+    -   **Default**: `500`
 
-Controls the style of the notification window's border. Accepts any value supported by `nvim_open_win()`.
-
--   **Variable**: `g:mode_change_notify_border_style`
--   **Type**: `String`
--   **Default**: `'rounded'`
--   **Examples**: `'none'`, `'single'`, `'double'`, `'solid'`
-
-**Example (`init.vim`):**
-```vim
-let g:mode_change_notify_border_style = 'single'
-```
-
-### Display Timeout
-
-Controls how long the notification is visible, in milliseconds.
-
--   **Variable**: `g:mode_change_notify_timeout`
--   **Type**: `Number`
--   **Default**: `500`
-
-**Example (`init.vim`):**
-```vim
-" Display for 1 second
-let g:mode_change_notify_timeout = 1000
-```
-
-### Display Position
-
-Controls where the notification appears on the screen.
-
--   **Variable**: `g:mode_change_notify_position`
--   **Type**: `String`
--   **Default**: `'center'`
--   **Available values**:
-    -   `'center'`
-    -   `'top_left'`
-    -   `'top_right'`
-    -   `'bottom_left'`
-    -   `'bottom_right'`
-
-**Example (`init.vim`):**
-```vim
-let g:mode_change_notify_position = 'bottom_right'
-```
+-   **`position`**: Controls where the notification appears on the screen.
+    -   **Type**: `String`
+    -   **Default**: `'center'`
+    -   **Values**: `'center'`, `'top_left'`, `'top_right'`, `'bottom_left'`, `'bottom_right'`.

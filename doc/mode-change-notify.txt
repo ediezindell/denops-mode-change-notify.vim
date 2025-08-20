@@ -6,11 +6,7 @@ CONTENTS                                       *mode-change-notify-contents*
 1. About                                     |mode-change-notify-about|
 2. Installation                              |mode-change-notify-installation|
 3. Configuration                             |mode-change-notify-configuration|
-   - Enabled Modes                           |g:mode_change_notify_enabled_modes|
-   - Notification Style                      |g:mode_change_notify_style|
-   - Border Style                            |g:mode_change_notify_border_style|
-   - Display Timeout                         |g:mode_change_notify_timeout|
-   - Display Position                        |g:mode_change_notify_position|
+   - Options Dictionary                      |g:mode_change_notify_options|
 
 ==============================================================================
 1. About                                         *mode-change-notify-about*
@@ -40,90 +36,54 @@ packer.nvim: >
 ==============================================================================
 3. Configuration                         *mode-change-notify-configuration*
 
-You can customize the notification behavior by setting the following global
-variables in your |init.vim| or |init.lua|.
-
-------------------------------------------------------------------------------
-ENABLED MODES                       *g:mode_change_notify_enabled_modes*
-
-Controls which modes will trigger a notification. You provide a list of mode
-initials.
-
-Variable:   g:mode_change_notify_enabled_modes
-Type:       List of String
-Default:    ['n', 'i', 'v']
-Common values:
-  - 'n': Normal
-  - 'i': Insert
-  - 'v': Visual
-  - 'c': Command
-  - 't': Terminal
-  - 'R': Replace
+All options are controlled by a single dictionary variable,
+|g:mode_change_notify_options|. You only need to specify the values you want to
+override from the defaults.
 
 Example: >
-    " Show notifications for Normal, Insert, Visual, and Command modes
-    let g:mode_change_notify_enabled_modes = ['n', 'i', 'v', 'c']
+    let g:mode_change_notify_options = {
+      \ 'style': 'ascii_filled',
+      \ 'position': 'bottom_right',
+      \ 'enabled_modes': ['n', 'i', 'v', 'c'],
+      \ 'timeout': 750,
+      \ }
 <
 ------------------------------------------------------------------------------
-NOTIFICATION STYLE                             *g:mode_change_notify_style*
+OPTIONS DICTIONARY                  *g:mode_change_notify_options*
 
-Controls the content of the notification.
+A dictionary containing all settings for this plugin.
 
-Variable:   g:mode_change_notify_style
-Type:       String
-Default:    'text'
-Values:
-  - 'text':           Simple text (e.g., "Normal").
-  - 'ascii_outline':  ASCII art with an outline style.
-  - 'ascii_filled':   ASCII art with a filled style.
+'enabled_modes'                 *mode-change-notify-enabled_modes*
+    Description:  Controls which modes will trigger a notification.
+    Type:         List of String
+    Default:      ['n', 'i', 'v']
+    Common values: 'n' (Normal), 'i' (Insert), 'v' (Visual), 'c' (Command),
+                   't' (Terminal), 'R' (Replace).
 
-Example: >
-    let g:mode_change_notify_style = 'ascii_outline'
-<
-------------------------------------------------------------------------------
-BORDER STYLE                         *g:mode_change_notify_border_style*
+'style'                         *mode-change-notify-style*
+    Description:  Controls the content of the notification.
+    Type:         String
+    Default:      'text'
+    Values:       'text', 'ascii_outline', 'ascii_filled'.
 
-Controls the style of the notification window's border. Accepts any value
-supported by |nvim_open_win()|.
+'border'                        *mode-change-notify-border*
+    Description:  Controls the style of the notification window's border.
+    Type:         String
+    Default:      'rounded'
+    Values:       Any style supported by |nvim_open_win()| (e.g., 'none',
+                  'single', 'double').
 
-Variable:   g:mode_change_notify_border_style
-Type:       String
-Default:    'rounded'
-Examples:   'none', 'single', 'double', 'solid'
+'timeout'                       *mode-change-notify-timeout*
+    Description:  Controls how long the notification is visible, in
+                  milliseconds.
+    Type:         Number
+    Default:      500
 
-Example: >
-    let g:mode_change_notify_border_style = 'single'
-<
-------------------------------------------------------------------------------
-DISPLAY TIMEOUT                         *g:mode_change_notify_timeout*
-
-Controls how long the notification is visible, in milliseconds.
-
-Variable:   g:mode_change_notify_timeout
-Type:       Number
-Default:    500
-
-Example: >
-    " Display for 1 second
-    let g:mode_change_notify_timeout = 1000
-<
-------------------------------------------------------------------------------
-DISPLAY POSITION                       *g:mode_change_notify_position*
-
-Controls where the notification appears on the screen.
-
-Variable:   g:mode_change_notify_position
-Type:       String
-Default:    'center'
-Values:
-  - 'center'
-  - 'top_left'
-  - 'top_right'
-  - 'bottom_left'
-  - 'bottom_right'
-
-Example: >
-    let g:mode_change_notify_position = 'bottom_right'
-<
+'position'                      *mode-change-notify-position*
+    Description:  Controls where the notification appears on the screen.
+    Type:         String
+    Default:      'center'
+    Values:       'center', 'top_left', 'top_right', 'bottom_left',
+                  'bottom_right'.
 ==============================================================================
 vim: set ft=help :
