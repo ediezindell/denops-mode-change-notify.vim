@@ -30,6 +30,28 @@ const asciiArtOutline: Record<string, string[]> = {
     "   \\ /   ",
     "    V    ",
   ],
+  "Command": [
+    "  ____ ",
+    " / ___|",
+    "| |    ",
+    "| |___ ",
+    " \\____|",
+  ],
+  "Terminal": [
+    "_______",
+    "|_   _|",
+    "  | |  ",
+    "  | |  ",
+    "  |_|  ",
+  ],
+  "Replace": [
+    " ____  ",
+    "|  _ \\ ",
+    "| |_) |",
+    "|  _ < ",
+    "| |_) |",
+    "|____/ ",
+  ],
 };
 
 const asciiArtFilled: Record<string, string[]> = {
@@ -57,18 +79,61 @@ const asciiArtFilled: Record<string, string[]> = {
     " ╚████╔╝ ",
     "  ╚═══╝  ",
   ],
+  "Command": [
+    " █████╗ ",
+    "██╔══██╗",
+    "██║  ██║",
+    "██║  ██║",
+    "╚█████╔╝",
+    " ╚════╝ ",
+  ],
+  "Terminal": [
+    "████████╗",
+    "╚══██╔══╝",
+    "   ██║   ",
+    "   ██║   ",
+    "   ██║   ",
+    "   ╚═╝   ",
+  ],
+  "Replace": [
+    "██████╗ ",
+    "██╔══██╗",
+    "██████╔╝",
+    "██╔══██╗",
+    "██║  ██║",
+    "╚═╝  ╚═╝",
+  ],
+};
+
+const modeNameMap: Record<string, string> = {
+  "n": "Normal",
+  "i": "Insert",
+  "v": "Visual",
+  "V": "Visual",
+  "c": "Command",
+  "t": "Terminal",
+  "R": "Replace",
 };
 
 export const main: Entrypoint = (denops) => {
   autocmd.group(denops, "mode-change-notify", (helper) => {
-    ["Insert", "Normal", "Visual"].forEach((mode) => {
-      const initial = mode.slice(0, 1).toLowerCase();
-      helper.define(
-        "ModeChanged",
-        `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ['${mode}'])`,
-      );
-    });
+    vars.g.get(denops, "mode_change_notify_enabled_modes", ["n", "i", "v"]).then(
+      (modes) => {
+        assert(modes, is.ArrayOf(is.String));
+        modes.forEach((initial) => {
+          const modeName = modeNameMap[initial];
+          if (!modeName) {
+            console.warn(`Unknown mode initial: ${initial}`);
+            return;
+          }
+          helper.define(
+            "ModeChanged",
+            `*:${initial}`,
+            `call denops#request('${denops.name}', 'showToast', ['${modeName}'])`,
+          );
+        });
+      },
+    );
   });
   denops.dispatcher = {
     async showToast(message: unknown): Promise<void> {

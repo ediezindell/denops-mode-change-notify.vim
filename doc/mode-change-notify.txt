@@ -6,6 +6,7 @@ CONTENTS                                       *mode-change-notify-contents*
 1. About                                     |mode-change-notify-about|
 2. Installation                              |mode-change-notify-installation|
 3. Configuration                             |mode-change-notify-configuration|
+   - Enabled Modes                           |g:mode_change_notify_enabled_modes|
    - Notification Style                      |g:mode_change_notify_style|
    - Border Style                            |g:mode_change_notify_border_style|
    - Display Timeout                         |g:mode_change_notify_timeout|
@@ -19,6 +20,7 @@ mode changes. Get a clear, visual notification when you switch modes (Normal,
 Insert, Visual).
 
 Features:
+- Enable notifications for specific modes (e.g., Normal, Insert, Command).
 - Multiple notification styles (text, outline ASCII, filled ASCII).
 - Customizable window border style.
 - Adjustable display duration.
@@ -41,6 +43,27 @@ packer.nvim: >
 You can customize the notification behavior by setting the following global
 variables in your |init.vim| or |init.lua|.
 
+------------------------------------------------------------------------------
+ENABLED MODES                       *g:mode_change_notify_enabled_modes*
+
+Controls which modes will trigger a notification. You provide a list of mode
+initials.
+
+Variable:   g:mode_change_notify_enabled_modes
+Type:       List of String
+Default:    ['n', 'i', 'v']
+Common values:
+  - 'n': Normal
+  - 'i': Insert
+  - 'v': Visual
+  - 'c': Command
+  - 't': Terminal
+  - 'R': Replace
+
+Example: >
+    " Show notifications for Normal, Insert, Visual, and Command modes
+    let g:mode_change_notify_enabled_modes = ['n', 'i', 'v', 'c']
+<
 ------------------------------------------------------------------------------
 NOTIFICATION STYLE                             *g:mode_change_notify_style*
 

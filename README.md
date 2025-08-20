@@ -7,6 +7,7 @@ A simple Neovim plugin that provides highly customizable notifications on mode c
 -   **Visual Feedback**: Get a clear, visual notification when you switch modes (Normal, Insert, Visual).
 -   **Multiple Styles**: Choose between a simple text display or two different ASCII art styles for the mode initial.
 -   **Highly Customizable**:
+    -   Enable notifications for specific modes (e.g., Normal, Insert, Command).
     -   Change the notification content style (`text`, `ascii_outline`, `ascii_filled`).
     -   Customize the notification window's border (`rounded`, `single`, `double`, etc.).
     -   Adjust the display duration (timeout).
@@ -29,6 +30,27 @@ use 'Omochice/denops-mode-change-notify'
 ## Configuration
 
 You can customize the notification behavior by setting the following global variables in your `init.vim` or `init.lua`.
+
+### Enabled Modes
+
+Controls which modes will trigger a notification. You provide a list of mode initials.
+
+-   **Variable**: `g:mode_change_notify_enabled_modes`
+-   **Type**: `List` of `String`
+-   **Default**: `['n', 'i', 'v']`
+-   **Common values**:
+    -   `'n'`: Normal
+    -   `'i'`: Insert
+    -   `'v'`: Visual
+    -   `'c'`: Command
+    -   `'t'`: Terminal
+    -   `'R'`: Replace
+
+**Example (`init.vim`):**
+```vim
+" Show notifications for Normal, Insert, Visual, and Command modes
+let g:mode_change_notify_enabled_modes = ['n', 'i', 'v', 'c']
+```
 
 ### Notification Style
 
