@@ -1,0 +1,106 @@
+*mode-change-notify.txt*      For denops-mode-change-notify      *mode-change-notify*
+
+==============================================================================
+CONTENTS                                       *mode-change-notify-contents*
+
+1. About                                     |mode-change-notify-about|
+2. Installation                              |mode-change-notify-installation|
+3. Configuration                             |mode-change-notify-configuration|
+   - Notification Style                      |g:mode_change_notify_style|
+   - Border Style                            |g:mode_change_notify_border_style|
+   - Display Timeout                         |g:mode_change_notify_timeout|
+   - Display Position                        |g:mode_change_notify_position|
+
+==============================================================================
+1. About                                         *mode-change-notify-about*
+
+A simple Neovim plugin that provides highly customizable notifications on
+mode changes. Get a clear, visual notification when you switch modes (Normal,
+Insert, Visual).
+
+Features:
+- Multiple notification styles (text, outline ASCII, filled ASCII).
+- Customizable window border style.
+- Adjustable display duration.
+- Configurable on-screen position.
+
+==============================================================================
+2. Installation                          *mode-change-notify-installation*
+
+Use your favorite plugin manager.
+
+vim-plug: >
+    Plug 'Omochice/denops-mode-change-notify'
+<
+packer.nvim: >
+    use 'Omochice/denops-mode-change-notify'
+<
+==============================================================================
+3. Configuration                         *mode-change-notify-configuration*
+
+You can customize the notification behavior by setting the following global
+variables in your |init.vim| or |init.lua|.
+
+------------------------------------------------------------------------------
+NOTIFICATION STYLE                             *g:mode_change_notify_style*
+
+Controls the content of the notification.
+
+Variable:   g:mode_change_notify_style
+Type:       String
+Default:    'text'
+Values:
+  - 'text':           Simple text (e.g., "Normal").
+  - 'ascii_outline':  ASCII art with an outline style.
+  - 'ascii_filled':   ASCII art with a filled style.
+
+Example: >
+    let g:mode_change_notify_style = 'ascii_outline'
+<
+------------------------------------------------------------------------------
+BORDER STYLE                         *g:mode_change_notify_border_style*
+
+Controls the style of the notification window's border. Accepts any value
+supported by |nvim_open_win()|.
+
+Variable:   g:mode_change_notify_border_style
+Type:       String
+Default:    'rounded'
+Examples:   'none', 'single', 'double', 'solid'
+
+Example: >
+    let g:mode_change_notify_border_style = 'single'
+<
+------------------------------------------------------------------------------
+DISPLAY TIMEOUT                         *g:mode_change_notify_timeout*
+
+Controls how long the notification is visible, in milliseconds.
+
+Variable:   g:mode_change_notify_timeout
+Type:       Number
+Default:    500
+
+Example: >
+    " Display for 1 second
+    let g:mode_change_notify_timeout = 1000
+<
+------------------------------------------------------------------------------
+DISPLAY POSITION                       *g:mode_change_notify_position*
+
+Controls where the notification appears on the screen.
+
+Variable:   g:mode_change_notify_position
+Type:       String
+Default:    'center'
+Values:
+  - 'center'
+  - 'top_left'
+  - 'top_right'
+  - 'bottom_left'
+  - 'bottom_right'
+
+Example: >
+    let g:mode_change_notify_position = 'bottom_right'
+<
+==============================================================================
+vim: set ft=help :
