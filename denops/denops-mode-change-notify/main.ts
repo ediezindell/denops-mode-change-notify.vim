@@ -66,13 +66,19 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         `*:${initial}`,
-        `call denops#request('${denops.name}', 'showToast', ['${mode}', 500])`,
+        `call denops#request('${denops.name}', 'showToast', ['${mode}'])`,
       );
     });
   });
   denops.dispatcher = {
-    async showToast(message: unknown, timeout: unknown): Promise<void> {
+    async showToast(message: unknown): Promise<void> {
       assert(message, is.String);
+
+      const timeout = await vars.g.get(
+        denops,
+        "mode_change_notify_timeout",
+        500,
+      );
       assert(timeout, is.Number);
 
       const style = await vars.g.get(
