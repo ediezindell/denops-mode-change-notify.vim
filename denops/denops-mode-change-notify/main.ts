@@ -109,10 +109,9 @@ const modeNameMap: Record<string, string> = {
   "n": "Normal",
   "i": "Insert",
   "v": "Visual",
-  "V": "Visual",
   "c": "Command",
   "t": "Terminal",
-  "R": "Replace",
+  "r": "Replace",
 };
 
 type Options = {
