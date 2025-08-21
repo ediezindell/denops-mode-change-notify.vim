@@ -4,8 +4,9 @@
 CONTENTS                                       *mode-change-notify-contents*
 
 1. About                                     |mode-change-notify-about|
-2. Installation                              |mode-change-notify-installation|
-3. Configuration                             |mode-change-notify-configuration|
+2. Requirements                              |mode-change-notify-requirements|
+3. Installation                              |mode-change-notify-installation|
+4. Configuration                             |mode-change-notify-configuration|
    - Options Dictionary                      |g:mode_change_notify_options|
 
 ==============================================================================
@@ -23,18 +24,42 @@ Features:
 - Configurable on-screen position.
 
 ==============================================================================
-2. Installation                          *mode-change-notify-installation*
+2. Requirements                          *mode-change-notify-requirements*
+
+This plugin requires the following:
+- Deno (https://deno.land/)
+- denops.vim (https://github.com/vim-denops/denops.vim)
+
+==============================================================================
+3. Installation                          *mode-change-notify-installation*
 
 Use your favorite plugin manager.
 
+lazy.nvim: >
+    {
+        "Omochice/denops-mode-change-notify",
+        dependencies = { "vim-denops/denops.vim" },
+        event = "BufEnter",
+        init = function()
+            vim.g.mode_change_notify_options = {
+                enabled_modes = { "n", "i" },
+                style = "ascii_filled",
+            }
+        end,
+    }
+<
 vim-plug: >
+    Plug 'vim-denops/denops.vim'
     Plug 'Omochice/denops-mode-change-notify'
 <
 packer.nvim: >
-    use 'Omochice/denops-mode-change-notify'
+    use {
+        'Omochice/denops-mode-change-notify',
+        requires = { 'vim-denops/denops.vim' },
+    }
 <
 ==============================================================================
-3. Configuration                         *mode-change-notify-configuration*
+4. Configuration                         *mode-change-notify-configuration*
 
 All options are controlled by a single dictionary variable,
 |g:mode_change_notify_options|. You only need to specify the values you want to

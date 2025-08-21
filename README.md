@@ -13,16 +13,23 @@ A simple Vim/Neovim plugin that provides highly customizable notifications on mo
   - Adjust the display duration (timeout).
   - Set the notification position on the screen (`center`, `top_left`, `bottom_right`, etc.).
 
+## Requirements
+
+This plugin requires the following:
+
+- [Deno](https://deno.land/)
+- [denops.vim](https://github.com/vim-denops/denops.vim)
+
 ## Installation
+
+Use your favorite plugin manager.
 
 ### lazy.nvim
 
 ```lua
 {
-    "ediezindell/denops-mode-change-notify.vim",
-    dependencies = {
-        "vim-denops/denops.vim",
-    },
+    "Omochice/denops-mode-change-notify",
+    dependencies = { "vim-denops/denops.vim" },
     event = "BufEnter",
     init = function()
         vim.g.mode_change_notify_options = {
@@ -33,6 +40,22 @@ A simple Vim/Neovim plugin that provides highly customizable notifications on mo
             position = "bottom_right",
         }
     end,
+}
+```
+
+### vim-plug
+
+```vim
+Plug 'vim-denops/denops.vim'
+Plug 'Omochice/denops-mode-change-notify'
+```
+
+### packer.nvim
+
+```lua
+use {
+    'Omochice/denops-mode-change-notify',
+    requires = { 'vim-denops/denops.vim' },
 }
 ```
 
