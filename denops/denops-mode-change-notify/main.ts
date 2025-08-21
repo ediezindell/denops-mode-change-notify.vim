@@ -261,17 +261,16 @@ export const main: Entrypoint = (denops) => {
         row,
         col,
         border: options.border,
-        style: "minimal",
         focusable: false,
       });
 
-      if (denops.meta.host === "vim") {
-        await fn.setwinvar(denops, popupWindow.winid, "&number", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&relativenumber", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
-        await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
-      }
+      // Set window options to make it minimal
+      await fn.setwinvar(denops, popupWindow.winid, "&number", 0);
+      await fn.setwinvar(denops, popupWindow.winid, "&relativenumber", 0);
+      await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
+      await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
+      await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
+
       await buffer.replace(denops, popupWindow.bufnr, content);
 
       setTimeout(async () => {
