@@ -1,6 +1,6 @@
 # denops-mode-change-notify
 
-A simple Neovim plugin that provides highly customizable notifications on mode changes.
+A simple Vim/Neovim plugin that provides highly customizable notifications on mode changes.
 
 ## Features
 
@@ -65,6 +65,7 @@ vim.g.mode_change_notify_options = {
   - Type: `String`
   - Default: `'text'`
   - Values: `'text'`, `'ascii_outline'`, `'ascii_filled'`.
+  - Note: `'ascii_filled'` requires Nerd Fonts to be installed and configured in your terminal.
 
 - `border`: Controls the style of the notification window's border.
 
