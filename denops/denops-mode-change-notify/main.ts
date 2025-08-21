@@ -270,6 +270,8 @@ export const main: Entrypoint = (denops) => {
       await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
       await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
       await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
+      await fn.setwinvar(denops, popupWindow.winid, "&cursorline", 0);
+      await fn.setwinvar(denops, popupWindow.winid, "&list", 0);
 
       await buffer.replace(denops, popupWindow.bufnr, content);
 
