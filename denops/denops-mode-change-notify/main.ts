@@ -113,17 +113,19 @@ const asciiArtFilled: Record<string, string[]> = {
   ],
 };
 
-const modeNameMap: Record<string, string> = {
+const modeNameMap = {
   n: "Normal",
   i: "Insert",
   v: "Visual",
   c: "Command",
   t: "Terminal",
   r: "Replace",
-};
+} as const;
 
+type ModeInitial = keyof typeof modeNameMap;
+// type ModeName = (typeof modeNameMap)[ModeInitial];
 type Options = {
-  enabled_modes: string[];
+  enabled_modes: ModeInitial[];
   style: "text" | "ascii_outline" | "ascii_filled";
   border: "none" | "single" | "double" | "rounded" | "solid" | "shadow";
   timeout: number;
@@ -137,7 +139,7 @@ type Options = {
 
 const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
   const defaultOptions: Options = {
-    enabled_modes: ["n", "i", "v", "c", "r"],
+    enabled_modes: Object.keys(modeNameMap) as ModeInitial[],
     style: "text",
     border: "rounded",
     timeout: 500,
