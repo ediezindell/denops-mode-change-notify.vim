@@ -26,11 +26,11 @@ A simple Neovim plugin that provides highly customizable notifications on mode c
     event = "BufEnter",
     init = function()
         vim.g.mode_change_notify_options = {
-            enabled_modes = { "n", "i", "v" },
+            enabled_modes = { "n", "i" },
             style = "ascii_filled",
-            border = "rounded",
+            border = "double",
             timeout = 750,
-            potion = "bottom_right",
+            position = "bottom_right",
         }
     end,
 }
@@ -44,11 +44,11 @@ Example (`init.vim`):
 
 ```lua
 vim.g.mode_change_notify_options = {
-    enabled_modes = ['n', 'i', 'v', 'c'],
+    enabled_modes = { "n", "i" },
     style = "ascii_filled",
-    border = "rounded",
+    border = "double",
     timeout = 750,
-    potion = "bottom_right",
+    position = "bottom_right",
 }
 ```
 
