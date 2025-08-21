@@ -35,6 +35,10 @@ This plugin requires the following:
 
 Use your favorite plugin manager.
 
+vim-plug: >
+    Plug 'vim-denops/denops.vim'
+    Plug 'ediezindell/denops-mode-change-notify'
+<
 lazy.nvim: >
     {
         "ediezindell/denops-mode-change-notify",
@@ -46,16 +50,6 @@ lazy.nvim: >
                 style = "ascii_filled",
             }
         end,
-    }
-<
-vim-plug: >
-    Plug 'vim-denops/denops.vim'
-    Plug 'ediezindell/denops-mode-change-notify'
-<
-packer.nvim: >
-    use {
-        'ediezindell/denops-mode-change-notify',
-        requires = { 'vim-denops/denops.vim' },
     }
 <
 ==============================================================================

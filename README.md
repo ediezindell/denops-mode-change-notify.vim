@@ -24,6 +24,13 @@ This plugin requires the following:
 
 Use your favorite plugin manager.
 
+### vim-plug
+
+```vim
+Plug 'vim-denops/denops.vim'
+Plug 'ediezindell/denops-mode-change-notify'
+```
+
 ### lazy.nvim
 
 ```lua
@@ -40,22 +47,6 @@ Use your favorite plugin manager.
             position = "bottom_right",
         }
     end,
-}
-```
-
-### vim-plug
-
-```vim
-Plug 'vim-denops/denops.vim'
-Plug 'ediezindell/denops-mode-change-notify'
-```
-
-### packer.nvim
-
-```lua
-use {
-    'ediezindell/denops-mode-change-notify',
-    requires = { 'vim-denops/denops.vim' },
 }
 ```
 
