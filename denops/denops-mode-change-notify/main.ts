@@ -218,7 +218,7 @@ export const main: Entrypoint = (denops) => {
         }
         default: // "text"
           content = ["", ` ${message} `, ""];
-          windowWidth = message.length + 4;
+          windowWidth = message.length + 2;
           windowHeight = 3;
           break;
       }
