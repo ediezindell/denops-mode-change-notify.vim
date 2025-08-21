@@ -135,6 +135,20 @@ type Options = {
     | "bottom_right";
 };
 
+const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
+  const defaultOptions: Options = {
+    enabled_modes: ["n", "i", "v", "c", "r"],
+    style: "text",
+    border: "rounded",
+    timeout: 500,
+    position: "center",
+  };
+  return {
+    ...defaultOptions,
+    ...userOptions,
+  };
+};
+
 export const main: Entrypoint = (denops) => {
   const setupAutocommands = async () => {
     const userOptions = await vars.g.get(
@@ -144,14 +158,7 @@ export const main: Entrypoint = (denops) => {
     );
     assert(userOptions, is.Record);
 
-    const options: Options = {
-      enabled_modes: ["n", "i", "v", "c", "r"],
-      style: "text",
-      border: "rounded",
-      timeout: 500,
-      position: "center",
-      ...userOptions,
-    };
+    const options = getOptions(userOptions);
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       options.enabled_modes.forEach((initial) => {
@@ -182,14 +189,7 @@ export const main: Entrypoint = (denops) => {
       );
       assert(userOptions, is.Record);
 
-      const options: Options = {
-        enabled_modes: ["n", "i", "v", "c", "r"],
-        style: "text",
-        border: "rounded",
-        timeout: 500,
-        position: "center",
-        ...userOptions,
-      };
+      const options = getOptions(userOptions);
 
       const buf = await nvim.nvim_create_buf(denops, false, true);
       assert(buf, is.Number);
