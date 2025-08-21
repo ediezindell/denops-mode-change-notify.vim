@@ -1,5 +1,6 @@
 import type { Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
+import * as fn from "jsr:@denops/std/function";
 import * as nvim from "jsr:@denops/std/function/nvim";
 import * as vars from "jsr:@denops/std/variable";
 
@@ -137,7 +138,7 @@ type Options = {
     | "bottom_right";
 };
 
-const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
+export const main: Entrypoint = (denops) => {
   const defaultOptions: Options = {
     enabled_modes: Object.keys(modeNameMap) as ModeInitial[],
     style: "text",
@@ -145,22 +146,24 @@ const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
     timeout: 500,
     position: "center",
   };
-  return {
-    ...defaultOptions,
-    ...userOptions,
-  };
-};
 
-export const main: Entrypoint = (denops) => {
-  const setupAutocommands = async () => {
+  let options = defaultOptions;
+
+  const loadOptions = async (): Promise<void> => {
     const userOptions = await vars.g.get(
       denops,
       "mode_change_notify_options",
       {},
     );
     assert(userOptions, is.Record);
+    options = {
+      ...defaultOptions,
+      ...userOptions,
+    };
+  };
 
-    const options = getOptions(userOptions);
+  const setupAutocommands = async () => {
+    await loadOptions();
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       options.enabled_modes.forEach((initial) => {
@@ -183,18 +186,6 @@ export const main: Entrypoint = (denops) => {
   denops.dispatcher = {
     async showToast(message: unknown): Promise<void> {
       assert(message, is.String);
-
-      const userOptions = await vars.g.get(
-        denops,
-        "mode_change_notify_options",
-        {},
-      );
-      assert(userOptions, is.Record);
-
-      const options = getOptions(userOptions);
-
-      const buf = await nvim.nvim_create_buf(denops, false, true);
-      assert(buf, is.Number);
 
       let content: string[] = [];
       let windowWidth: number;
@@ -223,11 +214,9 @@ export const main: Entrypoint = (denops) => {
           break;
       }
 
-      await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
-
-      const width = await nvim.nvim_get_option_value(denops, "columns", {});
+      const width = await fn.winwidth(denops, 0);
       assert(width, is.Number);
-      const height = await nvim.nvim_get_option_value(denops, "lines", {});
+      const height = await fn.winheight(denops, 0);
       assert(height, is.Number);
 
       let row: number;
@@ -257,28 +246,61 @@ export const main: Entrypoint = (denops) => {
           break;
       }
 
-      const win = await nvim.nvim_open_win(denops, buf, false, {
-        relative: "editor",
-        width: windowWidth,
-        height: windowHeight,
-        row,
-        col,
-        style: "minimal",
-        border: options.border,
-        focusable: false,
-      });
+      if (denops.meta.host === "vim") {
+        const border_prop = options.border !== "none"
+          ? [1, 1, 1, 1]
+          : [0, 0, 0, 0];
 
-      setTimeout(async () => {
-        try {
-          const isValid = await nvim.nvim_win_is_valid(denops, win);
-          assert(isValid, is.Boolean);
-          if (isValid) {
-            await nvim.nvim_win_close(denops, win, true);
+        const winid = (await denops.call("popup_create", content, {
+          line: row,
+          col,
+          border: border_prop,
+          focusable: false,
+        })) as number;
+
+        // Set window options to make it minimal
+        await fn.setwinvar(denops, winid, "&number", 0);
+        await fn.setwinvar(denops, winid, "&relativenumber", 0);
+        await fn.setwinvar(denops, winid, "&signcolumn", "no");
+        await fn.setwinvar(denops, winid, "&foldcolumn", 0);
+        await fn.setwinvar(denops, winid, "&statusline", "");
+        await fn.setwinvar(denops, winid, "&cursorline", 0);
+        await fn.setwinvar(denops, winid, "&list", 0);
+
+        setTimeout(async () => {
+          try {
+            await denops.call("popup_close", winid);
+          } catch (error) {
+            console.warn(`Failed to close window: ${error}`);
           }
-        } catch (error) {
-          console.warn(`Failed to close window: ${error}`);
-        }
-      }, options.timeout);
+        }, options.timeout);
+      } else {
+        // Neovim
+        const buf = await nvim.nvim_create_buf(denops, false, true);
+        await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
+        assert(buf, is.Number);
+        const win = await nvim.nvim_open_win(denops, buf, false, {
+          relative: "editor",
+          width: windowWidth,
+          height: windowHeight,
+          row,
+          col,
+          style: "minimal",
+          border: options.border,
+          focusable: false,
+        });
+
+        setTimeout(async () => {
+          try {
+            const isValid = await nvim.nvim_win_is_valid(denops, win);
+            if (isValid) {
+              await nvim.nvim_win_close(denops, win, true);
+            }
+          } catch (error) {
+            console.warn(`Failed to close window: ${error}`);
+          }
+        }, options.timeout);
+      }
     },
     reload: setupAutocommands,
   };
