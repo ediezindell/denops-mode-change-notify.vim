@@ -6,129 +6,146 @@ import * as vars from "jsr:@denops/std/variable";
 import { assert, is } from "jsr:@core/unknownutil";
 
 const asciiArtOutline: Record<string, string[]> = {
-  "Normal": [
-    " _   _ ",
-    "| \\ | |",
-    "|  \\| |",
-    "| . ` |",
-    "| |\\  |",
-    "|_| \\_|",
+  Normal: [
+    "  _   _  ",
+    " | \\ | | ",
+    " |  \\| | ",
+    " | . ` | ",
+    " | |\\  | ",
+    " |_| \\_| ",
+    "         ",
   ],
-  "Insert": [
-    " _____ ",
-    "|_   _|",
-    "  | |  ",
-    "  | |  ",
-    " _| |_ ",
-    "|_____|",
+  Insert: [
+    "  _____  ",
+    " |_   _| ",
+    "   | |   ",
+    "   | |   ",
+    "  _| |_  ",
+    " |_____| ",
+    "         ",
   ],
-  "Visual": [
+  Visual: [
     "__     __",
     "\\ \\   / /",
     " \\ \\ / / ",
     "  \\ V /  ",
     "   \\ /   ",
     "    V    ",
+    "         ",
   ],
-  "Command": [
-    "  ____ ",
-    " / ___|",
-    "| |    ",
-    "| |___ ",
-    " \\____|",
+  Command: [
+    "   ____  ",
+    "  / ___| ",
+    " | |     ",
+    " | |     ",
+    " | |___  ",
+    "  \\____| ",
+    "         ",
   ],
-  "Terminal": [
-    "_______",
-    "|_   _|",
-    "  | |  ",
-    "  | |  ",
-    "  |_|  ",
+  Terminal: [
+    "_________",
+    "|__   __|",
+    "   | |   ",
+    "   | |   ",
+    "   | |   ",
+    "   |_|   ",
+    "         ",
   ],
-  "Replace": [
-    " ____  ",
-    "|  _ \\ ",
-    "| |_) |",
-    "|  _ < ",
-    "| |_) |",
-    "|____/ ",
+  Replace: [
+    "  ____   ",
+    " |  _ \\  ",
+    " | |_) | ",
+    " |  _ <  ",
+    " | | \\ \\ ",
+    " |_|  \\_\\",
+    "         ",
   ],
 };
 
 const asciiArtFilled: Record<string, string[]> = {
-  "Normal": [
-    "███╗   ██╗",
-    "████╗  ██║",
-    "██╔██╗ ██║",
-    "██║╚██╗██║",
-    "██║ ╚████║",
-    "╚═╝  ╚═══╝",
+  Normal: [
+    " ███╗  ██╗",
+    " ████╗ ██║",
+    " ██╔██╗██║",
+    " ██║╚████║",
+    " ██║ ╚███║",
+    " ╚═╝  ╚══╝",
   ],
-  "Insert": [
-    "██╗",
-    "██║",
-    "██║",
-    "██║",
-    "██║",
-    "╚═╝",
+  Insert: [
+    "   ████╗  ",
+    "   ╚██╔╝  ",
+    "    ██║   ",
+    "    ██║   ",
+    "   ████╗  ",
+    "   ╚═══╝  ",
   ],
-  "Visual": [
-    "██╗   ██╗",
-    "██║   ██║",
-    "██║   ██║",
-    "╚██╗ ██╔╝",
-    " ╚████╔╝ ",
-    "  ╚═══╝  ",
+  Visual: [
+    " ██╗   ██╗",
+    " ██║   ██║",
+    " ██║   ██║",
+    " ╚██╗ ██╔╝",
+    "  ╚████╔╝ ",
+    "   ╚═══╝  ",
   ],
-  "Command": [
-    " █████╗ ",
-    "██╔══██╗",
-    "██║  ██║",
-    "██║  ██║",
-    "╚█████╔╝",
-    " ╚════╝ ",
+  Command: [
+    "  ██████╗ ",
+    " ██╔════╝ ",
+    " ██║      ",
+    " ██║      ",
+    " ╚██████╗ ",
+    "  ╚═════╝ ",
   ],
-  "Terminal": [
-    "████████╗",
-    "╚══██╔══╝",
-    "   ██║   ",
-    "   ██║   ",
-    "   ██║   ",
-    "   ╚═╝   ",
+  Terminal: [
+    " ████████╗",
+    " ╚══██╔══╝",
+    "    ██║   ",
+    "    ██║   ",
+    "    ██║   ",
+    "    ╚═╝   ",
   ],
-  "Replace": [
-    "██████╗ ",
-    "██╔══██╗",
-    "██████╔╝",
-    "██╔══██╗",
-    "██║  ██║",
-    "╚═╝  ╚═╝",
+  Replace: [
+    " ███████╗ ",
+    " ██╔═══██╗",
+    " ███████╔╝",
+    " ██╔═══██╗",
+    " ██║   ██║",
+    " ╚═╝   ╚═╝",
   ],
 };
 
 const modeNameMap: Record<string, string> = {
-  "n": "Normal",
-  "i": "Insert",
-  "v": "Visual",
-  "c": "Command",
-  "t": "Terminal",
-  "r": "Replace",
+  n: "Normal",
+  i: "Insert",
+  v: "Visual",
+  c: "Command",
+  t: "Terminal",
+  r: "Replace",
 };
 
 type Options = {
   enabled_modes: string[];
   style: "text" | "ascii_outline" | "ascii_filled";
-  border: string;
+  border: "none" | "single" | "double" | "rounded" | "solid" | "shadow";
   timeout: number;
-  position: "center" | "top_left" | "top_right" | "bottom_left" | "bottom_right";
+  position:
+    | "center"
+    | "top_left"
+    | "top_right"
+    | "bottom_left"
+    | "bottom_right";
 };
 
 export const main: Entrypoint = (denops) => {
   const setupAutocommands = async () => {
-    const userOptions = await vars.g.get(denops, "mode_change_notify_options", {});
+    const userOptions = await vars.g.get(
+      denops,
+      "mode_change_notify_options",
+      {},
+    );
     assert(userOptions, is.Record);
 
     const options: Options = {
-      enabled_modes: ["n", "i", "v"],
+      enabled_modes: ["n", "i", "v", "c", "r"],
       style: "text",
       border: "rounded",
       timeout: 500,
@@ -137,7 +154,6 @@ export const main: Entrypoint = (denops) => {
     };
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
-      helper.clear();
       options.enabled_modes.forEach((initial) => {
         const modeName = modeNameMap[initial];
         if (!modeName) {
@@ -167,7 +183,7 @@ export const main: Entrypoint = (denops) => {
       assert(userOptions, is.Record);
 
       const options: Options = {
-        enabled_modes: ["n", "i", "v"],
+        enabled_modes: ["n", "i", "v", "c", "r"],
         style: "text",
         border: "rounded",
         timeout: 500,
@@ -191,17 +207,11 @@ export const main: Entrypoint = (denops) => {
           const art = artSet[message];
           if (!art) return;
 
-          const artHeight = art.length;
           const artWidth = Math.max(...art.map((l) => l.length));
 
-          const paddedArt = art.map((line) => {
-            const padding = " ".repeat(artWidth - line.length);
-            return ` ${line}${padding} `;
-          });
-
-          content = ["", ...paddedArt, ""];
-          windowWidth = artWidth + 2;
-          windowHeight = artHeight + 2;
+          content = art;
+          windowWidth = artWidth;
+          windowHeight = content.length;
           break;
         }
         default: // "text"
