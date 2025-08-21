@@ -1,6 +1,8 @@
 import type { Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
-import * as nvim from "jsr:@denops/std/function/nvim";
+import * as buffer from "jsr:@denops/std/buffer";
+import * as fn from "jsr:@denops/std/function";
+import * as popup from "jsr:@denops/std/popup";
 import * as vars from "jsr:@denops/std/variable";
 
 import { assert, is } from "jsr:@core/unknownutil";
@@ -193,9 +195,6 @@ export const main: Entrypoint = (denops) => {
 
       const options = getOptions(userOptions);
 
-      const buf = await nvim.nvim_create_buf(denops, false, true);
-      assert(buf, is.Number);
-
       let content: string[] = [];
       let windowWidth: number;
       let windowHeight: number;
@@ -223,11 +222,9 @@ export const main: Entrypoint = (denops) => {
           break;
       }
 
-      await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
-
-      const width = await nvim.nvim_get_option_value(denops, "columns", {});
+      const width = await fn.winwidth(denops, 0);
       assert(width, is.Number);
-      const height = await nvim.nvim_get_option_value(denops, "lines", {});
+      const height = await fn.winheight(denops, 0);
       assert(height, is.Number);
 
       let row: number;
@@ -257,24 +254,21 @@ export const main: Entrypoint = (denops) => {
           break;
       }
 
-      const win = await nvim.nvim_open_win(denops, buf, false, {
+      const popupWindow = await popup.open(denops, {
         relative: "editor",
         width: windowWidth,
         height: windowHeight,
         row,
         col,
-        style: "minimal",
         border: options.border,
+        style: "minimal",
         focusable: false,
       });
+      await buffer.replace(denops, popupWindow.bufnr, content);
 
       setTimeout(async () => {
         try {
-          const isValid = await nvim.nvim_win_is_valid(denops, win);
-          assert(isValid, is.Boolean);
-          if (isValid) {
-            await nvim.nvim_win_close(denops, win, true);
-          }
+          await popupWindow.close();
         } catch (error) {
           console.warn(`Failed to close window: ${error}`);
         }
