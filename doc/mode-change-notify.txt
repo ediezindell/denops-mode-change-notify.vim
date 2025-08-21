@@ -56,7 +56,7 @@ A dictionary containing all settings for this plugin.
 'enabled_modes'                 *mode-change-notify-enabled_modes*
     Description:  Controls which modes will trigger a notification.
     Type:         List of String
-    Default:      ['n', 'i', 'v']
+    Default:      ['n', 'i', 'v', 'c', 't', 'r']
     Common values: 'n' (Normal), 'i' (Insert), 'v' (Visual), 'c' (Command),
                    't' (Terminal), 'R' (Replace).
 
