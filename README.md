@@ -28,7 +28,7 @@ Use your favorite plugin manager.
 
 ```lua
 {
-    "Omochice/denops-mode-change-notify",
+    "ediezindell/denops-mode-change-notify",
     dependencies = { "vim-denops/denops.vim" },
     event = "BufEnter",
     init = function()
@@ -47,14 +47,14 @@ Use your favorite plugin manager.
 
 ```vim
 Plug 'vim-denops/denops.vim'
-Plug 'Omochice/denops-mode-change-notify'
+Plug 'ediezindell/denops-mode-change-notify'
 ```
 
 ### packer.nvim
 
 ```lua
 use {
-    'Omochice/denops-mode-change-notify',
+    'ediezindell/denops-mode-change-notify',
     requires = { 'vim-denops/denops.vim' },
 }
 ```
