@@ -1,0 +1,89 @@
+*mode-change-notify.txt*      For denops-mode-change-notify      *mode-change-notify*
+
+==============================================================================
+CONTENTS                                       *mode-change-notify-contents*
+
+1. About                                     |mode-change-notify-about|
+2. Installation                              |mode-change-notify-installation|
+3. Configuration                             |mode-change-notify-configuration|
+   - Options Dictionary                      |g:mode_change_notify_options|
+
+==============================================================================
+1. About                                         *mode-change-notify-about*
+
+A simple Neovim plugin that provides highly customizable notifications on
+mode changes. Get a clear, visual notification when you switch modes (Normal,
+Insert, Visual).
+
+Features:
+- Enable notifications for specific modes (e.g., Normal, Insert, Command).
+- Multiple notification styles (text, outline ASCII, filled ASCII).
+- Customizable window border style.
+- Adjustable display duration.
+- Configurable on-screen position.
+
+==============================================================================
+2. Installation                          *mode-change-notify-installation*
+
+Use your favorite plugin manager.
+
+vim-plug: >
+    Plug 'Omochice/denops-mode-change-notify'
+<
+packer.nvim: >
+    use 'Omochice/denops-mode-change-notify'
+<
+==============================================================================
+3. Configuration                         *mode-change-notify-configuration*
+
+All options are controlled by a single dictionary variable,
+|g:mode_change_notify_options|. You only need to specify the values you want to
+override from the defaults.
+
+Example: >
+    let g:mode_change_notify_options = {
+      \ 'style': 'ascii_filled',
+      \ 'position': 'bottom_right',
+      \ 'enabled_modes': ['n', 'i', 'v', 'c'],
+      \ 'timeout': 750,
+      \ }
+<
+------------------------------------------------------------------------------
+OPTIONS DICTIONARY                  *g:mode_change_notify_options*
+
+A dictionary containing all settings for this plugin.
+
+'enabled_modes'                 *mode-change-notify-enabled_modes*
+    Description:  Controls which modes will trigger a notification.
+    Type:         List of String
+    Default:      ['n', 'i', 'v']
+    Common values: 'n' (Normal), 'i' (Insert), 'v' (Visual), 'c' (Command),
+                   't' (Terminal), 'R' (Replace).
+
+'style'                         *mode-change-notify-style*
+    Description:  Controls the content of the notification.
+    Type:         String
+    Default:      'text'
+    Values:       'text', 'ascii_outline', 'ascii_filled'.
+
+'border'                        *mode-change-notify-border*
+    Description:  Controls the style of the notification window's border.
+    Type:         String
+    Default:      'rounded'
+    Values:       Any style supported by |nvim_open_win()| (e.g., 'none',
+                  'single', 'double').
+
+'timeout'                       *mode-change-notify-timeout*
+    Description:  Controls how long the notification is visible, in
+                  milliseconds.
+    Type:         Number
+    Default:      500
+
+'position'                      *mode-change-notify-position*
+    Description:  Controls where the notification appears on the screen.
+    Type:         String
+    Default:      'center'
+    Values:       'center', 'top_left', 'top_right', 'bottom_left',
+                  'bottom_right'.
+==============================================================================
+vim: set ft=help :
