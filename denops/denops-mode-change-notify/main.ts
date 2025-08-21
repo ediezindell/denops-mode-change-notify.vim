@@ -256,6 +256,12 @@ export const main: Entrypoint = (denops) => {
       }
 
       if (denops.meta.host === "vim") {
+        if (typeof fn.popup_create !== "function") {
+          console.error(
+            "denops-mode-change-notify: Your Vim version does not support popup windows. Please upgrade to Vim 8.2+.",
+          );
+          return;
+        }
         const bufnr = await fn.bufadd(denops, "");
         await buffer.replace(denops, bufnr, content);
 
