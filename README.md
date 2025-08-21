@@ -85,6 +85,7 @@ let g:mode_change_notify_options = {
   - Type: `String`
   - Default: `'rounded'`
   - Values: Any style supported by `nvim_open_win()` (e.g., `'none'`, `'single'`, `'double'`).
+  - **Note**: This option is only fully supported in **Neovim**. In **Vim**, which uses pop-up windows, any value other than `'none'` will simply draw a default border. The specific styles like `'rounded'` or `'double'` will not apply.
 
 - `timeout`: Controls how long the notification is visible, in milliseconds.
 
