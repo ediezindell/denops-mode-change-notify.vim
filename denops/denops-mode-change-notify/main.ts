@@ -256,30 +256,32 @@ export const main: Entrypoint = (denops) => {
       }
 
       if (denops.meta.host === "vim") {
-        const popupWindow = await popup.open(denops, {
-          relative: "editor",
+        const bufnr = await fn.bufadd(denops, "");
+        await buffer.replace(denops, bufnr, content);
+
+        const border_prop = options.border !== "none" ? [1, 1, 1, 1] : [0, 0, 0, 0];
+
+        const winid = await fn.popup_create(denops, bufnr, {
+          line: row,
+          col,
           width: windowWidth,
           height: windowHeight,
-          row,
-          col,
-          border: options.border !== "none",
+          border: border_prop,
           focusable: false,
         });
 
         // Set window options to make it minimal
-        await fn.setwinvar(denops, popupWindow.winid, "&number", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&relativenumber", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
-        await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
-        await fn.setwinvar(denops, popupWindow.winid, "&cursorline", 0);
-        await fn.setwinvar(denops, popupWindow.winid, "&list", 0);
-
-        await buffer.replace(denops, popupWindow.bufnr, content);
+        await fn.setwinvar(denops, winid, "&number", 0);
+        await fn.setwinvar(denops, winid, "&relativenumber", 0);
+        await fn.setwinvar(denops, winid, "&signcolumn", "no");
+        await fn.setwinvar(denops, winid, "&foldcolumn", 0);
+        await fn.setwinvar(denops, winid, "&statusline", "");
+        await fn.setwinvar(denops, winid, "&cursorline", 0);
+        await fn.setwinvar(denops, winid, "&list", 0);
 
         setTimeout(async () => {
           try {
-            await popupWindow.close();
+            await fn.popup_close(denops, winid);
           } catch (error) {
             console.warn(`Failed to close window: ${error}`);
           }
