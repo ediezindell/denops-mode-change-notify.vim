@@ -256,25 +256,19 @@ export const main: Entrypoint = (denops) => {
       }
 
       if (denops.meta.host === "vim") {
-        if (typeof fn.popup_create !== "function") {
-          console.error(
-            "denops-mode-change-notify: Your Vim version does not support popup windows. Please upgrade to Vim 8.2+.",
-          );
-          return;
-        }
         const bufnr = await fn.bufadd(denops, "");
         await buffer.replace(denops, bufnr, content);
 
         const border_prop = options.border !== "none" ? [1, 1, 1, 1] : [0, 0, 0, 0];
 
-        const winid = await fn.popup_create(denops, bufnr, {
+        const winid = await denops.call("popup_create", bufnr, {
           line: row,
           col,
           width: windowWidth,
           height: windowHeight,
           border: border_prop,
           focusable: false,
-        });
+        }) as number;
 
         // Set window options to make it minimal
         await fn.setwinvar(denops, winid, "&number", 0);
@@ -287,7 +281,7 @@ export const main: Entrypoint = (denops) => {
 
         setTimeout(async () => {
           try {
-            await fn.popup_close(denops, winid);
+            await denops.call("popup_close", winid);
           } catch (error) {
             console.warn(`Failed to close window: ${error}`);
           }
