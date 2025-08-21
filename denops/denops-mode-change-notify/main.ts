@@ -1,9 +1,7 @@
 import type { Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
-import * as buffer from "jsr:@denops/std/buffer";
 import * as fn from "jsr:@denops/std/function";
 import * as nvim from "jsr:@denops/std/function/nvim";
-import * as popup from "jsr:@denops/std/popup";
 import * as vars from "jsr:@denops/std/variable";
 
 import { assert, is } from "jsr:@core/unknownutil";
@@ -140,7 +138,7 @@ type Options = {
     | "bottom_right";
 };
 
-const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
+export const main: Entrypoint = (denops) => {
   const defaultOptions: Options = {
     enabled_modes: Object.keys(modeNameMap) as ModeInitial[],
     style: "text",
@@ -148,22 +146,24 @@ const getOptions = (userOptions: Record<PropertyKey, unknown>): Options => {
     timeout: 500,
     position: "center",
   };
-  return {
-    ...defaultOptions,
-    ...userOptions,
-  };
-};
 
-export const main: Entrypoint = (denops) => {
-  const setupAutocommands = async () => {
+  let options = defaultOptions;
+
+  const loadOptions = async (): Promise<void> => {
     const userOptions = await vars.g.get(
       denops,
       "mode_change_notify_options",
       {},
     );
     assert(userOptions, is.Record);
+    options = {
+      ...defaultOptions,
+      ...userOptions,
+    };
+  };
 
-    const options = getOptions(userOptions);
+  const setupAutocommands = async () => {
+    await loadOptions();
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       options.enabled_modes.forEach((initial) => {
@@ -186,15 +186,6 @@ export const main: Entrypoint = (denops) => {
   denops.dispatcher = {
     async showToast(message: unknown): Promise<void> {
       assert(message, is.String);
-
-      const userOptions = await vars.g.get(
-        denops,
-        "mode_change_notify_options",
-        {},
-      );
-      assert(userOptions, is.Record);
-
-      const options = getOptions(userOptions);
 
       let content: string[] = [];
       let windowWidth: number;
@@ -256,19 +247,16 @@ export const main: Entrypoint = (denops) => {
       }
 
       if (denops.meta.host === "vim") {
-        const bufnr = await fn.bufadd(denops, "");
-        await buffer.replace(denops, bufnr, content);
+        const border_prop = options.border !== "none"
+          ? [1, 1, 1, 1]
+          : [0, 0, 0, 0];
 
-        const border_prop = options.border !== "none" ? [1, 1, 1, 1] : [0, 0, 0, 0];
-
-        const winid = await denops.call("popup_create", bufnr, {
+        const winid = (await denops.call("popup_create", content, {
           line: row,
           col,
-          width: windowWidth,
-          height: windowHeight,
           border: border_prop,
           focusable: false,
-        }) as number;
+        })) as number;
 
         // Set window options to make it minimal
         await fn.setwinvar(denops, winid, "&number", 0);
@@ -290,6 +278,7 @@ export const main: Entrypoint = (denops) => {
         // Neovim
         const buf = await nvim.nvim_create_buf(denops, false, true);
         await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
+        assert(buf, is.Number);
         const win = await nvim.nvim_open_win(denops, buf, false, {
           relative: "editor",
           width: windowWidth,
