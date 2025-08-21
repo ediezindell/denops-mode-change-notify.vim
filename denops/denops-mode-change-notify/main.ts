@@ -2,6 +2,7 @@ import type { Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
 import * as buffer from "jsr:@denops/std/buffer";
 import * as fn from "jsr:@denops/std/function";
+import * as nvim from "jsr:@denops/std/function/nvim";
 import * as popup from "jsr:@denops/std/popup";
 import * as vars from "jsr:@denops/std/variable";
 
@@ -254,34 +255,61 @@ export const main: Entrypoint = (denops) => {
           break;
       }
 
-      const popupWindow = await popup.open(denops, {
-        relative: "editor",
-        width: windowWidth,
-        height: windowHeight,
-        row,
-        col,
-        border: options.border,
-        focusable: false,
-      });
+      if (denops.meta.host === "vim") {
+        const popupWindow = await popup.open(denops, {
+          relative: "editor",
+          width: windowWidth,
+          height: windowHeight,
+          row,
+          col,
+          border: options.border !== "none",
+          focusable: false,
+        });
 
-      // Set window options to make it minimal
-      await fn.setwinvar(denops, popupWindow.winid, "&number", 0);
-      await fn.setwinvar(denops, popupWindow.winid, "&relativenumber", 0);
-      await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
-      await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
-      await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
-      await fn.setwinvar(denops, popupWindow.winid, "&cursorline", 0);
-      await fn.setwinvar(denops, popupWindow.winid, "&list", 0);
+        // Set window options to make it minimal
+        await fn.setwinvar(denops, popupWindow.winid, "&number", 0);
+        await fn.setwinvar(denops, popupWindow.winid, "&relativenumber", 0);
+        await fn.setwinvar(denops, popupWindow.winid, "&signcolumn", "no");
+        await fn.setwinvar(denops, popupWindow.winid, "&foldcolumn", 0);
+        await fn.setwinvar(denops, popupWindow.winid, "&statusline", "");
+        await fn.setwinvar(denops, popupWindow.winid, "&cursorline", 0);
+        await fn.setwinvar(denops, popupWindow.winid, "&list", 0);
 
-      await buffer.replace(denops, popupWindow.bufnr, content);
+        await buffer.replace(denops, popupWindow.bufnr, content);
 
-      setTimeout(async () => {
-        try {
-          await popupWindow.close();
-        } catch (error) {
-          console.warn(`Failed to close window: ${error}`);
-        }
-      }, options.timeout);
+        setTimeout(async () => {
+          try {
+            await popupWindow.close();
+          } catch (error) {
+            console.warn(`Failed to close window: ${error}`);
+          }
+        }, options.timeout);
+      } else {
+        // Neovim
+        const buf = await nvim.nvim_create_buf(denops, false, true);
+        await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
+        const win = await nvim.nvim_open_win(denops, buf, false, {
+          relative: "editor",
+          width: windowWidth,
+          height: windowHeight,
+          row,
+          col,
+          style: "minimal",
+          border: options.border,
+          focusable: false,
+        });
+
+        setTimeout(async () => {
+          try {
+            const isValid = await nvim.nvim_win_is_valid(denops, win);
+            if (isValid) {
+              await nvim.nvim_win_close(denops, win, true);
+            }
+          } catch (error) {
+            console.warn(`Failed to close window: ${error}`);
+          }
+        }, options.timeout);
+      }
     },
     reload: setupAutocommands,
   };
