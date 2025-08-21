@@ -38,9 +38,19 @@ A simple Vim/Neovim plugin that provides highly customizable notifications on mo
 
 ## Configuration
 
-All options are controlled by a single dictionary variable, `g:mode_change_notify_options`. You only need to specify the values you want to override.
+All options are controlled by a single dictionary variable, `g:mode_change_notify_options`. You only need to specify the values you want to override from the defaults.
 
-Example (`init.lua`):
+For a complete list of available options, their descriptions, and default values, please refer to the help documentation. You can view it by running the following command in Vim/Neovim:
+
+```vim
+:help mode-change-notify
+```
+
+### Examples
+
+Here are a few examples to get you started.
+
+**Lua (`init.lua`)**
 
 ```lua
 vim.g.mode_change_notify_options = {
@@ -52,7 +62,7 @@ vim.g.mode_change_notify_options = {
 }
 ```
 
-Example (`init.vim` or `.vimrc`):
+**Vimscript (`init.vim` or `.vimrc`)**
 
 ```vim
 let g:mode_change_notify_options = {
@@ -63,36 +73,3 @@ let g:mode_change_notify_options = {
     \ 'position': 'bottom_right',
     \ }
 ```
-
-### Available Options
-
-- `enabled_modes`: Controls which modes will trigger a notification.
-
-  - Type: `List` of `String`
-  - Default: `['n', 'i', 'v', 'c', 't', 'r']`
-  - Common initials: `'n'` (Normal), `'i'` (Insert), `'v'` (Visual), `'c'` (Command), `'t'` (Terminal), `'R'` (Replace).
-  - Note on Command (`c`) mode: Due to a timing issue in how Vim handles the `ModeChanged` event, notifications for command mode may not appear correctly or at all. This is a known limitation within Vim itself. Therefore, enabling notifications for this mode is not recommended for Vim users.
-
-- `style`: Controls the content of the notification.
-
-  - Type: `String`
-  - Default: `'text'`
-  - Values: `'text'`, `'ascii_outline'`, `'ascii_filled'`.
-  - Note: `'ascii_filled'` requires Nerd Fonts to be installed and configured in your terminal.
-
-- `border`: Controls the style of the notification window's border.
-
-  - Type: `String`
-  - Default: `'rounded'`
-  - Values: Any style supported by `nvim_open_win()` (e.g., `'none'`, `'single'`, `'double'`).
-  - **Note**: This option is only fully supported in **Neovim**. In **Vim**, which uses pop-up windows, any value other than `'none'` will simply draw a default border. The specific styles like `'rounded'` or `'double'` will not apply.
-
-- `timeout`: Controls how long the notification is visible, in milliseconds.
-
-  - Type: `Number`
-  - Default: `500`
-
-- `position`: Controls where the notification appears on the screen.
-  - Type: `String`
-  - Default: `'center'`
-  - Values: `'center'`, `'top_left'`, `'top_right'`, `'bottom_left'`, `'bottom_right'`.
