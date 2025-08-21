@@ -71,7 +71,7 @@ let g:mode_change_notify_options = {
   - Type: `List` of `String`
   - Default: `['n', 'i', 'v', 'c', 't', 'r']`
   - Common initials: `'n'` (Normal), `'i'` (Insert), `'v'` (Visual), `'c'` (Command), `'t'` (Terminal), `'R'` (Replace).
-  - Note: The `c` (Command) mode notification may not work reliably in all versions of Vim due to inconsistencies in the underlying `ModeChanged` autocommand. Please test this feature in your environment.
+  - Note on Command (`c`) mode: Due to a timing issue in how Vim handles the `ModeChanged` event, notifications for command mode may not appear correctly or at all. This is a known limitation within Vim itself. Therefore, enabling notifications for this mode is not recommended for Vim users.
 
 - `style`: Controls the content of the notification.
 
