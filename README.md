@@ -69,8 +69,9 @@ let g:mode_change_notify_options = {
 - `enabled_modes`: Controls which modes will trigger a notification.
 
   - Type: `List` of `String`
-  - Default: `['n', 'i', 'v']`
+  - Default: `['n', 'i', 'v', 'c', 't', 'r']`
   - Common initials: `'n'` (Normal), `'i'` (Insert), `'v'` (Visual), `'c'` (Command), `'t'` (Terminal), `'R'` (Replace).
+  - Note: The `c` (Command) mode notification may not work reliably in all versions of Vim due to inconsistencies in the underlying `ModeChanged` autocommand. Please test this feature in your environment.
 
 - `style`: Controls the content of the notification.
 
