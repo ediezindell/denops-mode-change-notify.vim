@@ -40,7 +40,7 @@ A simple Vim/Neovim plugin that provides highly customizable notifications on mo
 
 All options are controlled by a single dictionary variable, `g:mode_change_notify_options`. You only need to specify the values you want to override.
 
-Example (`init.vim`):
+Example (`init.lua`):
 
 ```lua
 vim.g.mode_change_notify_options = {
@@ -50,6 +50,18 @@ vim.g.mode_change_notify_options = {
     timeout = 750,
     position = "bottom_right",
 }
+```
+
+Example (`init.vim` or `.vimrc`):
+
+```vim
+let g:mode_change_notify_options = {
+    \ 'enabled_modes': ['n', 'i'],
+    \ 'style': 'ascii_filled',
+    \ 'border': 'double',
+    \ 'timeout': 750,
+    \ 'position': 'bottom_right',
+    \ }
 ```
 
 ### Available Options
