@@ -11,7 +11,7 @@ CONTENTS                                       *mode-change-notify-contents*
 ==============================================================================
 1. About                                         *mode-change-notify-about*
 
-A simple Neovim plugin that provides highly customizable notifications on
+A simple Vim/Neovim plugin that provides highly customizable notifications on
 mode changes. Get a clear, visual notification when you switch modes (Normal,
 Insert, Visual).
 
@@ -59,12 +59,20 @@ A dictionary containing all settings for this plugin.
     Default:      ['n', 'i', 'v', 'c', 't', 'r']
     Common values: 'n' (Normal), 'i' (Insert), 'v' (Visual), 'c' (Command),
                    't' (Terminal), 'R' (Replace).
+    Note on Command ('c') mode:
+                  Due to a timing issue in how Vim handles the |ModeChanged|
+                  event, notifications for command mode may not appear
+                  correctly or at all. This is a known limitation within Vim
+                  itself. Therefore, enabling notifications for this mode is
+                  not recommended for Vim users.
 
 'style'                         *mode-change-notify-style*
     Description:  Controls the content of the notification.
     Type:         String
     Default:      'text'
     Values:       'text', 'ascii_outline', 'ascii_filled'.
+    Note:         'ascii_filled' requires Nerd Fonts to be installed and
+                  configured in your terminal.
 
 'border'                        *mode-change-notify-border*
     Description:  Controls the style of the notification window's border.

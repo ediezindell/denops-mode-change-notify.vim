@@ -1,6 +1,6 @@
 # denops-mode-change-notify
 
-A simple Neovim plugin that provides highly customizable notifications on mode changes.
+A simple Vim/Neovim plugin that provides highly customizable notifications on mode changes.
 
 ## Features
 
@@ -40,7 +40,7 @@ A simple Neovim plugin that provides highly customizable notifications on mode c
 
 All options are controlled by a single dictionary variable, `g:mode_change_notify_options`. You only need to specify the values you want to override.
 
-Example (`init.vim`):
+Example (`init.lua`):
 
 ```lua
 vim.g.mode_change_notify_options = {
@@ -52,19 +52,33 @@ vim.g.mode_change_notify_options = {
 }
 ```
 
+Example (`init.vim` or `.vimrc`):
+
+```vim
+let g:mode_change_notify_options = {
+    \ 'enabled_modes': ['n', 'i'],
+    \ 'style': 'ascii_filled',
+    \ 'border': 'double',
+    \ 'timeout': 750,
+    \ 'position': 'bottom_right',
+    \ }
+```
+
 ### Available Options
 
 - `enabled_modes`: Controls which modes will trigger a notification.
 
   - Type: `List` of `String`
-  - Default: `['n', 'i', 'v']`
+  - Default: `['n', 'i', 'v', 'c', 't', 'r']`
   - Common initials: `'n'` (Normal), `'i'` (Insert), `'v'` (Visual), `'c'` (Command), `'t'` (Terminal), `'R'` (Replace).
+  - Note on Command (`c`) mode: Due to a timing issue in how Vim handles the `ModeChanged` event, notifications for command mode may not appear correctly or at all. This is a known limitation within Vim itself. Therefore, enabling notifications for this mode is not recommended for Vim users.
 
 - `style`: Controls the content of the notification.
 
   - Type: `String`
   - Default: `'text'`
   - Values: `'text'`, `'ascii_outline'`, `'ascii_filled'`.
+  - Note: `'ascii_filled'` requires Nerd Fonts to be installed and configured in your terminal.
 
 - `border`: Controls the style of the notification window's border.
 
