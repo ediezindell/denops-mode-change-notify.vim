@@ -4,10 +4,12 @@
 CONTENTS                                       *mode-change-notify-contents*
 
 1. About                                     |mode-change-notify-about|
+5. Options (full reference)                  |mode-change-notify-options|
 2. Requirements                              |mode-change-notify-requirements|
 3. Installation                              |mode-change-notify-installation|
 4. Configuration                             |mode-change-notify-configuration|
-   - Options Dictionary                      |g:mode_change_notify_options|
+   - Options Dictionary (overview)           |g:mode_change_notify_options|
+   See also: Options (full reference) |mode-change-notify-options|
 
 ==============================================================================
 1. About                                         *mode-change-notify-about*
@@ -55,6 +57,29 @@ lazy.nvim: >
 ==============================================================================
 4. Configuration                         *mode-change-notify-configuration*
 
+All options are controlled via a single dictionary: |g:mode_change_notify_options|.
+Specify only what you want to override. For full details, see |mode-change-notify-options|.
+
+Examples: >
+    let g:mode_change_notify_options = {
+      \ 'enabled_modes': ['n', 'i', 'v'],
+      \ 'style': 'ascii_filled',
+      \ 'position': 'bottom_right',
+      \ 'border': 'double',
+      \ 'timeout': 750,
+      \ }
+<
+
+Lua: >
+    vim.g.mode_change_notify_options = {
+      enabled_modes = { 'n', 'i', 'v' },
+      style = 'ascii_filled',
+      position = 'bottom_right',
+      border = 'double',
+      timeout = 750,
+    }
+<
+
 All options are controlled by a single dictionary variable,
 |g:mode_change_notify_options|. You only need to specify the values you want to
 override from the defaults.
@@ -68,17 +93,19 @@ Example: >
       \ }
 <
 ------------------------------------------------------------------------------
-OPTIONS DICTIONARY                  *g:mode_change_notify_options*
+OPTIONS DICTIONARY (overview)       *g:mode_change_notify_options*
 
 A dictionary containing all settings for this plugin.
 
 'enabled_modes'                 *mode-change-notify-enabled_modes*
     Description:  Controls which modes will trigger a notification.
-    Type:         List of String
+    Type:         List of String (category keys)
     Default:      ['n', 'i', 'v', 'c', 't', 'r']
-    Common values: 'n' (Normal), 'i' (Insert), 'v' (Visual), 'c' (Command),
-                   't' (Terminal), 'R' (Replace).
-    Note on Command ('c') mode:
+    Categories:   'n' (Normal), 'i' (Insert), 'v' (Visual family), 'c' (Command),
+                  't' (Terminal), 'r' (Replace family)
+    Visual family: covers character/line/block (e.g. v, V, <C-v>), treated as 'v'.
+    Replace family: covers R, Rv, treated as 'r'.
+    Note (Vim, Command 'c'):
                   Due to a timing issue in how Vim handles the |ModeChanged|
                   event, notifications for command mode may not appear
                   correctly or at all. This is a known limitation within Vim
@@ -87,18 +114,15 @@ A dictionary containing all settings for this plugin.
 
 'style'                         *mode-change-notify-style*
     Description:  Controls the content of the notification.
-    Type:         String
+    Type:         String (one of: 'text', 'ascii_outline', 'ascii_filled')
     Default:      'text'
-    Values:       'text', 'ascii_outline', 'ascii_filled'.
     Note:         'ascii_filled' requires Nerd Fonts to be installed and
                   configured in your terminal.
 
 'border'                        *mode-change-notify-border*
     Description:  Controls the style of the notification window's border.
-    Type:         String
+    Type:         String (one of: 'none', 'single', 'double', 'rounded', 'solid', 'shadow')
     Default:      'rounded'
-    Values:       Any style supported by |nvim_open_win()| (e.g., 'none',
-                  'single', 'double').
     Note:         This option is only fully supported in *Neovim*. In *Vim*,
                   which uses pop-up windows, any value other than 'none'
                   will simply draw a default border. The specific styles
@@ -112,9 +136,7 @@ A dictionary containing all settings for this plugin.
 
 'position'                      *mode-change-notify-position*
     Description:  Controls where the notification appears on the screen.
-    Type:         String
+    Type:         String (one of: 'top_left', 'top_right', 'bottom_left', 'bottom_right', 'center')
     Default:      'center'
-    Values:       'center', 'top_left', 'top_right', 'bottom_left',
-                  'bottom_right'.
 ==============================================================================
 vim: set ft=help :

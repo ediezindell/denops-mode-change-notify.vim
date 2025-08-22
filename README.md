@@ -1,5 +1,87 @@
 # denops-mode-change-notify
 
+A simple Vim/Neovim plugin that shows a small notification when you change modes. Built with denops.
+
+## Features
+
+- Visual feedback on mode changes (Normal, Insert, Visual, Command, Terminal, Replace)
+- Multiple content styles: `text`, `ascii_outline`, `ascii_filled`
+- Configurable border, position, and timeout
+- Simple category-based configuration for modes
+
+## Requirements
+
+- Deno
+- denops.vim
+
+## Installation
+
+Use your favorite plugin manager.
+
+### vim-plug
+
+```vim
+Plug 'vim-denops/denops.vim'
+Plug 'ediezindell/denops-mode-change-notify'
+```
+
+### lazy.nvim
+
+```lua
+{
+  "ediezindell/denops-mode-change-notify",
+  dependencies = { "vim-denops/denops.vim" },
+  event = "BufEnter",
+  init = function()
+    vim.g.mode_change_notify_options = {
+      enabled_modes = { "n", "i", "v" },
+      style = "ascii_filled",
+      border = "double",
+      timeout = 750,
+      position = "bottom_right",
+    }
+  end,
+}
+```
+
+## Quick start
+
+Configuration is category-based. Use these 6 categories only:
+- `n` (Normal)
+- `i` (Insert)
+- `v` (Visual family: character/line/block; covers `v`, `V`, `<C-v>`)
+- `c` (Command)
+- `t` (Terminal)
+- `r` (Replace family: covers `R`, `Rv`)
+
+Examples:
+
+Lua (init.lua)
+```lua
+vim.g.mode_change_notify_options = {
+  enabled_modes = { "n", "i", "v" },
+  style = "ascii_filled",
+  border = "double",
+  timeout = 750,
+  position = "bottom_right",
+}
+```
+
+Vimscript (init.vim or .vimrc)
+```vim
+let g:mode_change_notify_options = {
+\ 'enabled_modes': ['n', 'i', 'v'],
+\ 'style': 'ascii_filled',
+\ 'border': 'double',
+\ 'timeout': 750,
+\ 'position': 'bottom_right',
+\ }
+```
+
+Notes
+- The `ascii_filled` style requires Nerd Fonts to be installed and used by your terminal.
+- For full configuration and details, see: `:help mode-change-notify`
+
 A simple Vim/Neovim plugin that provides highly customizable notifications on mode changes.
 
 ## Features
