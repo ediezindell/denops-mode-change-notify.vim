@@ -121,9 +121,28 @@ export const main: Entrypoint = (denops) => {
         break;
     }
 
-    const width = await fn.winwidth(denops, 0);
+    // Use editor total size (not current window size) for consistent positioning
+    let width: number;
+    let height: number;
+    if (denops.meta.host === "vim") {
+      width = Number(await denops.eval("&columns"));
+      height = Number(await denops.eval("&lines"));
+    } else {
+      try {
+        const uis = await nvim.nvim_list_uis(denops) as Array<{ width: number; height: number }>;
+        if (Array.isArray(uis) && uis.length > 0) {
+          width = uis[0].width;
+          height = uis[0].height;
+        } else {
+          width = Number(await denops.eval("&columns"));
+          height = Number(await denops.eval("&lines"));
+        }
+      } catch (_) {
+        width = Number(await denops.eval("&columns"));
+        height = Number(await denops.eval("&lines"));
+      }
+    }
     assert(width, is.Number);
-    const height = await fn.winheight(denops, 0);
     assert(height, is.Number);
 
     let row: number;
