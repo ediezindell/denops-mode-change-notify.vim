@@ -87,6 +87,10 @@ export const main: Entrypoint = (denops) => {
 
   setupAutocommands();
 
+  // Keep track of last notification windows to avoid stacking issues
+  let lastVimPopupWinid: number | null = null;
+  let lastNvimWinid: number | null = null;
+
   const showToast = async (
     denops: Denops,
     modeCategory: ModeCategory,
@@ -150,6 +154,15 @@ export const main: Entrypoint = (denops) => {
     }
 
     if (denops.meta.host === "vim") {
+      // Close previous popup first to ensure new one is visible on top
+      if (lastVimPopupWinid) {
+        try {
+          await denops.call("popup_close", lastVimPopupWinid);
+        } catch (_) {
+          // ignore
+        }
+        lastVimPopupWinid = null;
+      }
       const border_prop = options.border !== "none"
         ? [1, 1, 1, 1]
         : [0, 0, 0, 0];
@@ -157,6 +170,7 @@ export const main: Entrypoint = (denops) => {
         line: row,
         col,
         border: border_prop,
+        zindex: 9999,
         focusable: false,
       })) as number;
       await fn.setwinvar(denops, winid, "&number", 0);
@@ -166,6 +180,7 @@ export const main: Entrypoint = (denops) => {
       await fn.setwinvar(denops, winid, "&statusline", "");
       await fn.setwinvar(denops, winid, "&cursorline", 0);
       await fn.setwinvar(denops, winid, "&list", 0);
+      lastVimPopupWinid = winid;
       setTimeout(async () => {
         try {
           await denops.call("popup_close", winid);
@@ -174,6 +189,18 @@ export const main: Entrypoint = (denops) => {
         }
       }, options.timeout);
     } else {
+      // Close previous floating window first to ensure top-most
+      if (lastNvimWinid) {
+        try {
+          const isValid = await nvim.nvim_win_is_valid(denops, lastNvimWinid);
+          if (isValid) {
+            await nvim.nvim_win_close(denops, lastNvimWinid, true);
+          }
+        } catch (_) {
+          // ignore
+        }
+        lastNvimWinid = null;
+      }
       const buf = await nvim.nvim_create_buf(denops, false, true);
       await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
 
@@ -188,6 +215,7 @@ export const main: Entrypoint = (denops) => {
         style: "minimal",
         border: options.border,
         focusable: false,
+        noautocmd: true,
       });
       setTimeout(async () => {
         try {
