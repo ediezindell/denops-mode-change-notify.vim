@@ -11,19 +11,31 @@ import {
   MODE_DISPLAY_NAME,
   ModeCategory,
 } from "./ModeCategory.ts";
-import { normalizeEnabledModes, normalizeModeKey } from "./normalize.ts";
+import { normalizeModeKey } from "./normalize.ts";
+
+const styles = ["text", "ascii_outline", "ascii_filled"] as const;
+const borders = [
+  "none",
+  "single",
+  "double",
+  "rounded",
+  "solid",
+  "shadow",
+] as const;
+const positions = [
+  "top_left",
+  "top_right",
+  "bottom_left",
+  "bottom_right",
+  "center",
+] as const;
 
 type Options = {
   enabled_modes: ModeCategory[];
-  style: "text" | "ascii_outline" | "ascii_filled";
-  border: "none" | "single" | "double" | "rounded" | "solid" | "shadow";
+  style: (typeof styles)[number];
+  border: (typeof borders)[number];
   timeout: number;
-  position:
-    | "center"
-    | "top_left"
-    | "top_right"
-    | "bottom_left"
-    | "bottom_right";
+  position: (typeof positions)[number];
 };
 
 export const main: Entrypoint = (denops) => {
@@ -34,8 +46,7 @@ export const main: Entrypoint = (denops) => {
     timeout: 500,
     position: "center",
   };
-
-  let options = defaultOptions;
+  let options: Options = { ...defaultOptions };
 
   const loadOptions = async (): Promise<void> => {
     const userOptions = await vars.g.get(
@@ -43,21 +54,23 @@ export const main: Entrypoint = (denops) => {
       "mode_change_notify_options",
       {},
     );
-    assert(userOptions, is.Record);
-    const merged = {
-      ...defaultOptions,
-      ...userOptions,
-    } as Options & { enabled_modes: unknown };
-
-    const normalized = normalizeEnabledModes(
-      merged.enabled_modes,
-      defaultOptions.enabled_modes,
+    assert(
+      userOptions,
+      is.PartialOf(
+        is.ObjectOf({
+          enabled_modes: is.ArrayOf(is.LiteralOneOf(MODE_CATEGORIES)),
+          style: is.LiteralOneOf(styles),
+          border: is.LiteralOneOf(borders),
+          timeout: is.Number,
+          position: is.LiteralOneOf(positions),
+        }),
+      ),
     );
 
     options = {
-      ...merged,
-      enabled_modes: normalized,
-    } as Options;
+      ...defaultOptions,
+      ...userOptions,
+    };
   };
 
   const setupAutocommands = async () => {
@@ -90,6 +103,7 @@ export const main: Entrypoint = (denops) => {
           : asciiArtFilled;
         const art = artSet[modeCategory];
         if (!art) return;
+
         const artWidth = Math.max(...art.map((l) => l.length));
         content = art;
         windowWidth = artWidth;
@@ -162,7 +176,9 @@ export const main: Entrypoint = (denops) => {
     } else {
       const buf = await nvim.nvim_create_buf(denops, false, true);
       await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
+
       assert(buf, is.Number);
+
       const win = await nvim.nvim_open_win(denops, buf, false, {
         relative: "editor",
         width: windowWidth,
@@ -189,11 +205,14 @@ export const main: Entrypoint = (denops) => {
   denops.dispatcher = {
     async modeChanged(amatch: unknown): Promise<void> {
       assert(amatch, is.String);
-      const newPart = amatch.includes(":") ? amatch.split(":").pop()! : amatch;
-      const key = normalizeModeKey(newPart);
-      if (!key) return;
-      if (!options.enabled_modes.includes(key)) return;
-      await showToast(denops, key);
+
+      const rawModeKey = amatch.includes(":")
+        ? amatch.split(":").pop()!
+        : amatch;
+      const modeKey = normalizeModeKey(rawModeKey);
+      if (!modeKey) return;
+      if (!options.enabled_modes.includes(modeKey)) return;
+      await showToast(denops, modeKey);
     },
   };
 };
