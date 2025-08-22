@@ -31,6 +31,9 @@ Features:
 This plugin requires the following:
 - Deno (https://deno.land/)
 - denops.vim (https://github.com/vim-denops/denops.vim)
+- Vim with |ModeChanged| support (8.2.1978+)
+- Neovim with |ModeChanged| support (0.6+)
+
 
 ==============================================================================
 3. Installation                          *mode-change-notify-installation*
