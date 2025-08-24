@@ -4,12 +4,12 @@
 CONTENTS                                       *mode-change-notify-contents*
 
 1. About                                     |mode-change-notify-about|
-5. Options (full reference)                  |mode-change-notify-options|
 2. Requirements                              |mode-change-notify-requirements|
 3. Installation                              |mode-change-notify-installation|
 4. Configuration                             |mode-change-notify-configuration|
-   - Options Dictionary (overview)           |g:mode_change_notify_options|
-   See also: Options (full reference) |mode-change-notify-options|
+5. Options (full reference)                  |mode-change-notify-options|
+   - Options Dictionary                      |g:mode_change_notify_options|
+
 
 ==============================================================================
 1. About                                         *mode-change-notify-about*
@@ -38,32 +38,20 @@ This plugin requires the following:
 ==============================================================================
 3. Installation                          *mode-change-notify-installation*
 
-Use your favorite plugin manager.
+Use your favorite plugin manager to install:
+- 'vim-denops/denops.vim'
+- 'ediezindell/denops-mode-change-notify'
 
-vim-plug: >
-    Plug 'vim-denops/denops.vim'
-    Plug 'ediezindell/denops-mode-change-notify'
-<
-lazy.nvim: >
-    {
-        "ediezindell/denops-mode-change-notify",
-        dependencies = { "vim-denops/denops.vim" },
-        event = "BufEnter",
-        init = function()
-            vim.g.mode_change_notify_options = {
-                enabled_modes = { "n", "i" },
-                style = "ascii_filled",
-            }
-        end,
-    }
-<
+See the project README for examples with specific plugin managers.
+
 ==============================================================================
 4. Configuration                         *mode-change-notify-configuration*
 
 All options are controlled via a single dictionary: |g:mode_change_notify_options|.
-Specify only what you want to override. For full details, see |mode-change-notify-options|.
+Specify only the values you want to override from the defaults. For full
+details on all available options, see |mode-change-notify-options|.
 
-Examples: >
+Example (Vimscript): >
     let g:mode_change_notify_options = {
       \ 'enabled_modes': ['n', 'i', 'v'],
       \ 'style': 'ascii_filled',
@@ -72,8 +60,7 @@ Examples: >
       \ 'timeout': 750,
       \ }
 <
-
-Lua: >
+Example (Lua): >
     vim.g.mode_change_notify_options = {
       enabled_modes = { 'n', 'i', 'v' },
       style = 'ascii_filled',
@@ -83,20 +70,13 @@ Lua: >
     }
 <
 
-All options are controlled by a single dictionary variable,
-|g:mode_change_notify_options|. You only need to specify the values you want to
-override from the defaults.
+==============================================================================
+5. Options (full reference)                  *mode-change-notify-options*
 
-Example: >
-    let g:mode_change_notify_options = {
-      \ 'style': 'ascii_filled',
-      \ 'position': 'bottom_right',
-      \ 'enabled_modes': ['n', 'i', 'v', 'c'],
-      \ 'timeout': 750,
-      \ }
-<
+This section provides a complete reference for all configuration options.
+
 ------------------------------------------------------------------------------
-OPTIONS DICTIONARY (overview)       *g:mode_change_notify_options*
+OPTIONS DICTIONARY                  *g:mode_change_notify_options*
 
 A dictionary containing all settings for this plugin.
 
