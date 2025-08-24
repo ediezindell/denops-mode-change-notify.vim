@@ -1,0 +1,13 @@
+g:mode_change_notify_options	mode-change-notify.txt	/*g:mode_change_notify_options*
+mode-change-notify	mode-change-notify.txt	/*mode-change-notify*
+mode-change-notify-about	mode-change-notify.txt	/*mode-change-notify-about*
+mode-change-notify-border	mode-change-notify.txt	/*mode-change-notify-border*
+mode-change-notify-configuration	mode-change-notify.txt	/*mode-change-notify-configuration*
+mode-change-notify-contents	mode-change-notify.txt	/*mode-change-notify-contents*
+mode-change-notify-enabled_modes	mode-change-notify.txt	/*mode-change-notify-enabled_modes*
+mode-change-notify-installation	mode-change-notify.txt	/*mode-change-notify-installation*
+mode-change-notify-position	mode-change-notify.txt	/*mode-change-notify-position*
+mode-change-notify-requirements	mode-change-notify.txt	/*mode-change-notify-requirements*
+mode-change-notify-style	mode-change-notify.txt	/*mode-change-notify-style*
+mode-change-notify-timeout	mode-change-notify.txt	/*mode-change-notify-timeout*
+mode-change-notify.txt	mode-change-notify.txt	/*mode-change-notify.txt*
