@@ -11,8 +11,8 @@ A simple Vim/Neovim plugin that shows a small notification when you change modes
 
 ## Requirements
 
-- Deno
-- denops.vim
+- [Deno](https://deno.land/)
+- [denops.vim](https://github.com/vim-denops/denops.vim)
 
 ## Installation
 
@@ -32,16 +32,6 @@ Plug 'ediezindell/denops-mode-change-notify'
   "ediezindell/denops-mode-change-notify",
   dependencies = { "vim-denops/denops.vim" },
   event = "BufEnter",
-  init = function()
-    -- Example config:
-    vim.g.mode_change_notify_options = {
-      enabled_modes = { "n", "i", "v" },
-      style = "ascii_filled",
-      border = "double",
-      timeout = 750,
-      position = "bottom_right",
-    }
-  end,
 }
 ```
 
