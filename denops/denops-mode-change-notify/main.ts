@@ -132,8 +132,8 @@ export const main: Entrypoint = (denops) => {
           height = uis[0].height;
         } else {
           const [cols, lines] = await Promise.all([
-            denops.eval("fn.eval(denops, "&columns")columns"),
-            denops.eval("fn.eval(denops, "&lines")lines"),
+            denops.eval("&columns"),
+            denops.eval("&lines"),
           ]);
           assert(cols, is.Number);
           assert(lines, is.Number);
@@ -142,8 +142,8 @@ export const main: Entrypoint = (denops) => {
         }
       } catch (_) {
         const [cols, lines] = await Promise.all([
-          denops.eval("fn.eval(denops, "&columns")columns"),
-          denops.eval("fn.eval(denops, "&lines")lines"),
+          denops.eval("&columns"),
+          denops.eval("&lines"),
         ]);
         assert(cols, is.Number);
         assert(lines, is.Number);
@@ -152,8 +152,8 @@ export const main: Entrypoint = (denops) => {
       }
     } else {
       const [cols, lines] = await Promise.all([
-        denops.eval("fn.eval(denops, "&columns")columns"),
-        denops.eval("fn.eval(denops, "&lines")lines"),
+        denops.eval("&columns"),
+        denops.eval("&lines"),
       ]);
       assert(cols, is.Number);
       assert(lines, is.Number);
