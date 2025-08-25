@@ -207,6 +207,10 @@ export const main: Entrypoint = (denops) => {
         border: border_prop,
         zindex: 9999,
         focusable: false,
+        // Use Normal highlight so background matches editor
+        highlight: "Normal",
+        // Make border use Normal as well to avoid odd contrast
+        borderhighlight: ["Normal"],
       })) as number;
       await fn.setwinvar(denops, winid, "&number", 0);
       await fn.setwinvar(denops, winid, "&relativenumber", 0);
