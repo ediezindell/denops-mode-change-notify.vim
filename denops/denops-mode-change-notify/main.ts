@@ -121,10 +121,45 @@ export const main: Entrypoint = (denops) => {
         break;
     }
 
-    const width = await fn.winwidth(denops, 0);
-    assert(width, is.Number);
-    const height = await fn.winheight(denops, 0);
-    assert(height, is.Number);
+    // Determine editor-wide size (not current window size)
+    let width: number;
+    let height: number;
+    if (denops.meta.host === "nvim") {
+      try {
+        const uis = await nvim.nvim_list_uis(denops);
+        if (uis && uis.length > 0 && typeof uis[0].width === "number" && typeof uis[0].height === "number") {
+          width = uis[0].width;
+          height = uis[0].height;
+        } else {
+          const [cols, lines] = await Promise.all([
+            denops.eval("&columns"),
+            denops.eval("&lines"),
+          ]);
+          assert(cols, is.Number);
+          assert(lines, is.Number);
+          width = cols;
+          height = lines;
+        }
+      } catch (_) {
+        const [cols, lines] = await Promise.all([
+          denops.eval("&columns"),
+          denops.eval("&lines"),
+        ]);
+        assert(cols, is.Number);
+        assert(lines, is.Number);
+        width = cols;
+        height = lines;
+      }
+    } else {
+      const [cols, lines] = await Promise.all([
+        denops.eval("&columns"),
+        denops.eval("&lines"),
+      ]);
+      assert(cols, is.Number);
+      assert(lines, is.Number);
+      width = cols;
+      height = lines;
+    }
 
     let row: number;
     let col: number;
@@ -172,6 +207,10 @@ export const main: Entrypoint = (denops) => {
         border: border_prop,
         zindex: 9999,
         focusable: false,
+        // Use Normal highlight so background matches editor
+        highlight: "Normal",
+        // Make border use Normal as well to avoid odd contrast
+        borderhighlight: ["Normal"],
       })) as number;
       await fn.setwinvar(denops, winid, "&number", 0);
       await fn.setwinvar(denops, winid, "&relativenumber", 0);
