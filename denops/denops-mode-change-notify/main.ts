@@ -219,6 +219,7 @@ export const main: Entrypoint = (denops) => {
       await fn.setwinvar(denops, winid, "&statusline", "");
       await fn.setwinvar(denops, winid, "&cursorline", 0);
       await fn.setwinvar(denops, winid, "&list", 0);
+      await fn.setwinvar(denops, winid, "&ambiwidth", "single");
       lastVimPopupWinid = winid;
       setTimeout(async () => {
         try {
@@ -256,6 +257,8 @@ export const main: Entrypoint = (denops) => {
         focusable: false,
         noautocmd: true,
       });
+      await nvim.nvim_win_set_option(denops, win, "ambiwidth", "single");
+      lastNvimWinid = win;
       setTimeout(async () => {
         try {
           const isValid = await nvim.nvim_win_is_valid(denops, win);
