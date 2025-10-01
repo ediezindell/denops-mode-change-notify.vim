@@ -99,10 +99,16 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    switch (options.style) {
+    const ambiwidth = await denops.eval("&ambiwidth");
+    let style = options.style;
+    if (ambiwidth === "double" && style === "ascii_filled") {
+      style = "ascii_outline";
+    }
+
+    switch (style) {
       case "ascii_outline":
       case "ascii_filled": {
-        const artSet = options.style === "ascii_outline"
+        const artSet = style === "ascii_outline"
           ? asciiArtOutline
           : asciiArtFilled;
         const art = artSet[modeCategory];

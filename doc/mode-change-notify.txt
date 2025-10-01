@@ -100,7 +100,9 @@ A dictionary containing all settings for this plugin.
     Type:         String (one of: 'text', 'ascii_outline', 'ascii_filled')
     Default:      'text'
     Note:         'ascii_filled' requires Nerd Fonts to be installed and
-                  configured in your terminal.
+                  configured in your terminal. If your |'ambiwidth'| setting
+                  is 'double', this style will automatically fall back to
+                  'ascii_outline' to prevent display issues.
 
 'border'                        *mode-change-notify-border*
     Description:  Controls the style of the notification window's border.
