@@ -121,24 +121,23 @@ export const main: Entrypoint = (denops) => {
         break;
     }
 
-    // Determine editor-wide size (not current window size)
-    let width: number;
-    let height: number;
+    let width = 0;
+    let height = 0;
     if (denops.meta.host === "nvim") {
       try {
         const uis = await nvim.nvim_list_uis(denops);
-        if (uis && uis.length > 0 && typeof uis[0].width === "number" && typeof uis[0].height === "number") {
+        assert(
+          uis,
+          is.ArrayOf(
+            is.ObjectOf({
+              width: is.Number,
+              height: is.Number,
+            }),
+          ),
+        );
+        if (uis.length > 0) {
           width = uis[0].width;
           height = uis[0].height;
-        } else {
-          const [cols, lines] = await Promise.all([
-            denops.eval("&columns"),
-            denops.eval("&lines"),
-          ]);
-          assert(cols, is.Number);
-          assert(lines, is.Number);
-          width = cols;
-          height = lines;
         }
       } catch (_) {
         const [cols, lines] = await Promise.all([
