@@ -73,14 +73,63 @@ export const main: Entrypoint = (denops) => {
     };
   };
 
+  // Cache screen dimensions to avoid RPC calls on every mode change
+  let screenWidth = 0;
+  let screenHeight = 0;
+
+  const updateDimensions = async () => {
+    if (denops.meta.host === "nvim") {
+      try {
+        const uis = await nvim.nvim_list_uis(denops);
+        assert(
+          uis,
+          is.ArrayOf(
+            is.ObjectOf({
+              width: is.Number,
+              height: is.Number,
+            }),
+          ),
+        );
+        if (uis.length > 0) {
+          screenWidth = uis[0].width;
+          screenHeight = uis[0].height;
+        }
+      } catch (_) {
+        const [cols, lines] = await Promise.all([
+          denops.eval("&columns"),
+          denops.eval("&lines"),
+        ]);
+        assert(cols, is.Number);
+        assert(lines, is.Number);
+        screenWidth = cols;
+        screenHeight = lines;
+      }
+    } else {
+      const [cols, lines] = await Promise.all([
+        denops.eval("&columns"),
+        denops.eval("&lines"),
+      ]);
+      assert(cols, is.Number);
+      assert(lines, is.Number);
+      screenWidth = cols;
+      screenHeight = lines;
+    }
+  };
+
   const setupAutocommands = async () => {
     await loadOptions();
+    await updateDimensions();
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       helper.define(
         "ModeChanged",
         "*",
         `call denops#request('${denops.name}', 'modeChanged', [expand('<amatch>')])`,
+      );
+      helper.define(
+        "VimResized",
+        "*",
+        `call denops#request('${denops.name}', 'updateDimensions', [])`,
       );
     });
   };
@@ -121,44 +170,11 @@ export const main: Entrypoint = (denops) => {
         break;
     }
 
-    let width = 0;
-    let height = 0;
-    if (denops.meta.host === "nvim") {
-      try {
-        const uis = await nvim.nvim_list_uis(denops);
-        assert(
-          uis,
-          is.ArrayOf(
-            is.ObjectOf({
-              width: is.Number,
-              height: is.Number,
-            }),
-          ),
-        );
-        if (uis.length > 0) {
-          width = uis[0].width;
-          height = uis[0].height;
-        }
-      } catch (_) {
-        const [cols, lines] = await Promise.all([
-          denops.eval("&columns"),
-          denops.eval("&lines"),
-        ]);
-        assert(cols, is.Number);
-        assert(lines, is.Number);
-        width = cols;
-        height = lines;
-      }
-    } else {
-      const [cols, lines] = await Promise.all([
-        denops.eval("&columns"),
-        denops.eval("&lines"),
-      ]);
-      assert(cols, is.Number);
-      assert(lines, is.Number);
-      width = cols;
-      height = lines;
+    if (screenWidth === 0 || screenHeight === 0) {
+      await updateDimensions();
     }
+    const width = screenWidth;
+    const height = screenHeight;
 
     let row: number;
     let col: number;
@@ -279,6 +295,10 @@ export const main: Entrypoint = (denops) => {
       if (!modeKey) return;
       if (!options.enabled_modes.includes(modeKey)) return;
       await showToast(denops, modeKey);
+    },
+
+    async updateDimensions(): Promise<void> {
+      await updateDimensions();
     },
   };
 };
