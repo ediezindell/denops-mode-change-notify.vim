@@ -1,5 +1,6 @@
 import type { Denops, Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
+import * as batch from "jsr:@denops/std/batch";
 import * as fn from "jsr:@denops/std/function";
 import * as nvim from "jsr:@denops/std/function/nvim";
 import * as vars from "jsr:@denops/std/variable";
@@ -227,13 +228,15 @@ export const main: Entrypoint = (denops) => {
         // Make border use Normal as well to avoid odd contrast
         borderhighlight: ["Normal"],
       })) as number;
-      await fn.setwinvar(denops, winid, "&number", 0);
-      await fn.setwinvar(denops, winid, "&relativenumber", 0);
-      await fn.setwinvar(denops, winid, "&signcolumn", "no");
-      await fn.setwinvar(denops, winid, "&foldcolumn", 0);
-      await fn.setwinvar(denops, winid, "&statusline", "");
-      await fn.setwinvar(denops, winid, "&cursorline", 0);
-      await fn.setwinvar(denops, winid, "&list", 0);
+      await batch.batch(denops, async (denops) => {
+        await fn.setwinvar(denops, winid, "&number", 0);
+        await fn.setwinvar(denops, winid, "&relativenumber", 0);
+        await fn.setwinvar(denops, winid, "&signcolumn", "no");
+        await fn.setwinvar(denops, winid, "&foldcolumn", 0);
+        await fn.setwinvar(denops, winid, "&statusline", "");
+        await fn.setwinvar(denops, winid, "&cursorline", 0);
+        await fn.setwinvar(denops, winid, "&list", 0);
+      });
       lastVimPopupWinid = winid;
       setTimeout(async () => {
         try {
@@ -246,10 +249,7 @@ export const main: Entrypoint = (denops) => {
       // Close previous floating window first to ensure top-most
       if (lastNvimWinid) {
         try {
-          const isValid = await nvim.nvim_win_is_valid(denops, lastNvimWinid);
-          if (isValid) {
-            await nvim.nvim_win_close(denops, lastNvimWinid, true);
-          }
+          await nvim.nvim_win_close(denops, lastNvimWinid, true);
         } catch (_) {
           // ignore
         }
@@ -273,12 +273,9 @@ export const main: Entrypoint = (denops) => {
       });
       setTimeout(async () => {
         try {
-          const isValid = await nvim.nvim_win_is_valid(denops, win);
-          if (isValid) {
-            await nvim.nvim_win_close(denops, win, true);
-          }
-        } catch (error) {
-          console.warn(`Failed to close window: ${error}`);
+          await nvim.nvim_win_close(denops, win, true);
+        } catch (_) {
+          // ignore
         }
       }, options.timeout);
     }
