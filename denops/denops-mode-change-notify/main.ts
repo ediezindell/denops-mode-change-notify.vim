@@ -125,12 +125,12 @@ export const main: Entrypoint = (denops) => {
       helper.define(
         "ModeChanged",
         "*",
-        `call denops#request('${denops.name}', 'modeChanged', [expand('<amatch>')])`,
+        `call denops#notify('${denops.name}', 'modeChanged', [expand('<amatch>')])`,
       );
       helper.define(
         "VimResized",
         "*",
-        `call denops#request('${denops.name}', 'updateDimensions', [])`,
+        `call denops#notify('${denops.name}', 'updateDimensions', [])`,
       );
     });
   };
@@ -256,21 +256,23 @@ export const main: Entrypoint = (denops) => {
         lastNvimWinid = null;
       }
       const buf = await nvim.nvim_create_buf(denops, false, true);
-      await nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
-
       assert(buf, is.Number);
 
-      const win = await nvim.nvim_open_win(denops, buf, false, {
-        relative: "editor",
-        width: windowWidth,
-        height: windowHeight,
-        row,
-        col,
-        style: "minimal",
-        border: options.border,
-        focusable: false,
-        noautocmd: true,
-      });
+      const [_, win] = await batch.collect(denops, (denops) => [
+        nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content),
+        nvim.nvim_open_win(denops, buf, false, {
+          relative: "editor",
+          width: windowWidth,
+          height: windowHeight,
+          row,
+          col,
+          style: "minimal",
+          border: options.border,
+          focusable: false,
+          noautocmd: true,
+        }),
+      ]);
+      assert(win, is.Number);
       setTimeout(async () => {
         try {
           await nvim.nvim_win_close(denops, win, true);
