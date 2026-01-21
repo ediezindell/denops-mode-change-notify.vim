@@ -1,7 +1,3 @@
-## 2024-05-23 - RPC Overhead in Event Handlers
-**Learning:** Frequent events like `ModeChanged` can trigger expensive RPC calls if not optimized. Caching values like screen dimensions and updating them on relevant events (like `VimResized`) significantly reduces IPC traffic.
-**Action:** When handling frequent events in denops, always look for opportunities to cache state derived from RPC calls, using other events to invalidate or update the cache.
-
-## 2024-05-24 - Batching and Optimistic RPC
-**Learning:** Sequential RPC calls like `setwinvar` and "check-then-act" patterns (like `is_valid` -> `close`) kill performance in Denops plugins due to latency.
-**Action:** Use `denops.batch` for sequential calls and try/catch blocks for optimistic actions instead of validity checks.
+## 2026-01-21 - Batching Fallible Operations in Denops
+**Learning:** `batch.collect` aborts if any promise rejects. To batch operations that might fail safely (like closing a non-existent window), wrap them in `pcall` (Lua/Neovim) or `try-catch` (Vimscript) via `exec`/`cmd`.
+**Action:** Always wrap non-critical cleanup steps in safe-execution wrappers when batching them with critical steps to maximize RPC efficiency without risking batch failure.
