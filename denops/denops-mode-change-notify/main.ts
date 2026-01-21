@@ -207,29 +207,36 @@ export const main: Entrypoint = (denops) => {
     }
 
     if (denops.meta.host === "vim") {
-      // Close previous popup first to ensure new one is visible on top
-      if (lastVimPopupWinid) {
-        try {
-          await denops.call("popup_close", lastVimPopupWinid);
-        } catch (_) {
-          // ignore
-        }
-        lastVimPopupWinid = null;
-      }
       const border_prop = options.border !== "none"
         ? [1, 1, 1, 1]
         : [0, 0, 0, 0];
-      const winid = (await denops.call("popup_create", content, {
+      const popupOptions = {
         line: row,
         col,
         border: border_prop,
         zindex: 9999,
         focusable: false,
-        // Use Normal highlight so background matches editor
         highlight: "Normal",
-        // Make border use Normal as well to avoid odd contrast
         borderhighlight: ["Normal"],
-      })) as number;
+      };
+
+      // Batch close and create operations to reduce RPC roundtrips
+      const results = await batch.collect(denops, (helper) => {
+        const cmds: Promise<unknown>[] = [];
+        if (lastVimPopupWinid) {
+          // Use try-catch in Vimscript to safely close without aborting if window is gone
+          cmds.push(
+            helper.cmd(
+              `try | call popup_close(${lastVimPopupWinid}) | catch | endtry`,
+            ),
+          );
+        }
+        cmds.push(helper.call("popup_create", content, popupOptions));
+        return cmds;
+      });
+
+      const winid = results[results.length - 1] as number;
+
       await batch.batch(denops, async (denops) => {
         await fn.setwinvar(denops, winid, "&number", 0);
         await fn.setwinvar(denops, winid, "&relativenumber", 0);
@@ -239,6 +246,7 @@ export const main: Entrypoint = (denops) => {
         await fn.setwinvar(denops, winid, "&cursorline", 0);
         await fn.setwinvar(denops, winid, "&list", 0);
       });
+
       lastVimPopupWinid = winid;
       setTimeout(async () => {
         try {
@@ -248,16 +256,6 @@ export const main: Entrypoint = (denops) => {
         }
       }, options.timeout);
     } else {
-      // Close previous floating window first to ensure top-most
-      if (lastNvimWinid) {
-        try {
-          await nvim.nvim_win_close(denops, lastNvimWinid, true);
-        } catch (_) {
-          // ignore
-        }
-        lastNvimWinid = null;
-      }
-
       const createBuffer = async () => {
         const buf = await nvim.nvim_create_buf(denops, false, true);
         await nvim.nvim_buf_set_option(denops, buf, "bufhidden", "hide");
@@ -285,20 +283,38 @@ export const main: Entrypoint = (denops) => {
         });
 
       let win: unknown;
+
+      const executeBatch = async (
+        helper: Denops,
+        bufnr: number,
+      ): Promise<unknown> => {
+        const res = await batch.collect(helper, (h) => {
+          const cmds: Promise<unknown>[] = [];
+          if (lastNvimWinid) {
+            // Batch the close operation with creation.
+            // Use pcall via lua to safely close previous window without error if invalid.
+            cmds.push(
+              nvim.nvim_exec_lua(
+                h,
+                "return pcall(vim.api.nvim_win_close, ...)",
+                [lastNvimWinid, true],
+              ),
+            );
+          }
+          cmds.push(setLines(h, bufnr));
+          cmds.push(openWin(h, bufnr));
+          return cmds;
+        });
+        // The last result is the window ID from openWin
+        return res[res.length - 1];
+      };
+
       try {
-        const res = await batch.collect(denops, (helper) => [
-          setLines(helper, lastNvimBufnr!),
-          openWin(helper, lastNvimBufnr!),
-        ]);
-        win = res[1];
+        win = await executeBatch(denops, lastNvimBufnr!);
       } catch (_) {
         // If buffer reuse failed (e.g. user deleted buffer), create a new one
         await createBuffer();
-        const res = await batch.collect(denops, (helper) => [
-          setLines(helper, lastNvimBufnr!),
-          openWin(helper, lastNvimBufnr!),
-        ]);
-        win = res[1];
+        win = await executeBatch(denops, lastNvimBufnr!);
       }
 
       assert(win, is.Number);
