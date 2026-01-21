@@ -140,6 +140,8 @@ export const main: Entrypoint = (denops) => {
   // Keep track of last notification windows to avoid stacking issues
   let lastVimPopupWinid: number | null = null;
   let lastNvimWinid: number | null = null;
+  // Reuse buffer in Neovim to avoid creating new buffers for every toast
+  let lastNvimBufnr: number | null = null;
 
   const showToast = async (
     denops: Denops,
@@ -255,11 +257,21 @@ export const main: Entrypoint = (denops) => {
         }
         lastNvimWinid = null;
       }
-      const buf = await nvim.nvim_create_buf(denops, false, true);
-      assert(buf, is.Number);
 
-      const [_, win] = await batch.collect(denops, (denops) => [
-        nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content),
+      const createBuffer = async () => {
+        const buf = await nvim.nvim_create_buf(denops, false, true);
+        await nvim.nvim_buf_set_option(denops, buf, "bufhidden", "hide");
+        lastNvimBufnr = buf;
+        return buf;
+      };
+
+      if (!lastNvimBufnr) {
+        await createBuffer();
+      }
+
+      const setLines = (denops: Denops, buf: number) =>
+        nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
+      const openWin = (denops: Denops, buf: number) =>
         nvim.nvim_open_win(denops, buf, false, {
           relative: "editor",
           width: windowWidth,
@@ -270,12 +282,30 @@ export const main: Entrypoint = (denops) => {
           border: options.border,
           focusable: false,
           noautocmd: true,
-        }),
-      ]);
+        });
+
+      let win: unknown;
+      try {
+        const res = await batch.collect(denops, (helper) => [
+          setLines(helper, lastNvimBufnr!),
+          openWin(helper, lastNvimBufnr!),
+        ]);
+        win = res[1];
+      } catch (_) {
+        // If buffer reuse failed (e.g. user deleted buffer), create a new one
+        await createBuffer();
+        const res = await batch.collect(denops, (helper) => [
+          setLines(helper, lastNvimBufnr!),
+          openWin(helper, lastNvimBufnr!),
+        ]);
+        win = res[1];
+      }
+
       assert(win, is.Number);
+      lastNvimWinid = win;
       setTimeout(async () => {
         try {
-          await nvim.nvim_win_close(denops, win, true);
+          await nvim.nvim_win_close(denops, win as number, true);
         } catch (_) {
           // ignore
         }
