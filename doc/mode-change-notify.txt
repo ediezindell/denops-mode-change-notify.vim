@@ -58,6 +58,7 @@ Example (Vimscript): >
       \ 'position': 'bottom_right',
       \ 'border': 'double',
       \ 'timeout': 750,
+      \ 'highlight': 'Normal',
       \ }
 <
 Example (Lua): >
@@ -67,6 +68,7 @@ Example (Lua): >
       position = 'bottom_right',
       border = 'double',
       timeout = 750,
+      highlight = 'Normal',
     }
 <
 
@@ -121,5 +123,12 @@ A dictionary containing all settings for this plugin.
     Description:  Controls where the notification appears on the screen.
     Type:         String (one of: 'top_left', 'top_right', 'bottom_left', 'bottom_right', 'center')
     Default:      'center'
+
+'highlight'                     *mode-change-notify-highlight*
+    Description:  Controls the highlight group used for the notification window.
+                  This allows you to customize the foreground/background color.
+                  Recommended groups: 'Normal', 'ModeMsg', 'Pmenu', 'ErrorMsg'.
+    Type:         String
+    Default:      'Normal'
 ==============================================================================
 vim: set ft=help :

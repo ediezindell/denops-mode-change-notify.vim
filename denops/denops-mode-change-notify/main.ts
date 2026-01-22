@@ -36,6 +36,7 @@ type Options = {
   border: (typeof borders)[number];
   timeout: number;
   position: (typeof positions)[number];
+  highlight: string;
 };
 
 export const main: Entrypoint = (denops) => {
@@ -45,6 +46,7 @@ export const main: Entrypoint = (denops) => {
     border: "rounded",
     timeout: 500,
     position: "center",
+    highlight: "Normal",
   };
   let options: Options = { ...defaultOptions };
 
@@ -63,6 +65,7 @@ export const main: Entrypoint = (denops) => {
           border: is.LiteralOneOf(borders),
           timeout: is.Number,
           position: is.LiteralOneOf(positions),
+          highlight: is.String,
         }),
       ),
     );
@@ -215,8 +218,8 @@ export const main: Entrypoint = (denops) => {
         border: border_prop,
         zindex: 9999,
         focusable: false,
-        highlight: "Normal",
-        borderhighlight: ["Normal"],
+        highlight: options.highlight,
+        borderhighlight: [options.highlight],
       };
 
       // Batch close and create operations to reduce RPC roundtrips
@@ -312,6 +315,12 @@ export const main: Entrypoint = (denops) => {
       }
 
       assert(win, is.Number);
+      await nvim.nvim_win_set_option(
+        denops,
+        win as number,
+        "winhighlight",
+        `Normal:${options.highlight}`,
+      );
       lastNvimWinid = win;
       setTimeout(async () => {
         try {

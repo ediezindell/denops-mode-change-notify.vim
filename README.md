@@ -47,6 +47,7 @@ let g:mode_change_notify_options = {
 \ 'border': 'double',
 \ 'timeout': 750,
 \ 'position': 'bottom_right',
+\ 'highlight': 'Normal',
 \ }
 ```
 
@@ -58,6 +59,7 @@ vim.g.mode_change_notify_options = {
   border = "double",
   timeout = 750,
   position = "bottom_right",
+  highlight = "Normal",
 }
 ```
 
