@@ -39,6 +39,22 @@ type Options = {
   highlight: string;
 };
 
+const getVimBorderChars = (style: string): string[] | undefined => {
+  switch (style) {
+    case "single":
+      return ["─", "│", "─", "│", "┌", "┐", "┘", "└"];
+    case "double":
+      return ["═", "║", "═", "║", "╔", "╗", "╝", "╚"];
+    case "rounded":
+      return ["─", "│", "─", "│", "╭", "╮", "╯", "╰"];
+    case "solid":
+      return [" ", " ", " ", " ", " ", " ", " ", " "];
+    default:
+      // "none", "shadow", and others fallback to default (empty) which allows simple border if border prop is set
+      return undefined;
+  }
+};
+
 export const main: Entrypoint = (denops) => {
   const defaultOptions: Options = {
     enabled_modes: [...MODE_CATEGORIES],
@@ -235,6 +251,9 @@ export const main: Entrypoint = (denops) => {
         focusable: false,
         highlight: options.highlight,
         borderhighlight: [options.highlight],
+        ...(getVimBorderChars(options.border)
+          ? { borderchars: getVimBorderChars(options.border) }
+          : {}),
       };
 
       // Batch close and create operations to reduce RPC roundtrips
