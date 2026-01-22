@@ -94,7 +94,10 @@ export const main: Entrypoint = (denops) => {
   let currentAmbiwidth = "single";
 
   // Cache ASCII art dimensions to avoid recalculating on every mode change
-  const dimensionsCache = new Map<string, { width: number; height: number }>();
+  const toastCache = new Map<
+    string,
+    { content: string[]; width: number; height: number }
+  >();
 
   const updateAmbiwidth = async () => {
     const val = await denops.eval("&ambiwidth");
@@ -184,36 +187,40 @@ export const main: Entrypoint = (denops) => {
       style = "ascii_outline";
     }
 
-    switch (style) {
-      case "ascii_outline":
-      case "ascii_filled": {
-        const artSet = style === "ascii_outline"
-          ? asciiArtOutline
-          : asciiArtFilled;
-        const art = artSet[modeCategory];
-        if (!art) return;
+    const cacheKey = `${style}:${modeCategory}`;
+    const cached = toastCache.get(cacheKey);
 
-        content = art;
+    if (cached) {
+      content = cached.content;
+      windowWidth = cached.width;
+      windowHeight = cached.height;
+    } else {
+      switch (style) {
+        case "ascii_outline":
+        case "ascii_filled": {
+          const artSet = style === "ascii_outline"
+            ? asciiArtOutline
+            : asciiArtFilled;
+          const art = artSet[modeCategory];
+          if (!art) return;
 
-        const cacheKey = `${style}:${modeCategory}`;
-        const cached = dimensionsCache.get(cacheKey);
-
-        if (cached) {
-          windowWidth = cached.width;
-          windowHeight = cached.height;
-        } else {
+          content = art;
           const artWidth = Math.max(...art.map((l) => l.length));
           windowWidth = artWidth;
           windowHeight = content.length;
-          dimensionsCache.set(cacheKey, { width: windowWidth, height: windowHeight });
+          break;
         }
-        break;
+        default: // "text"
+          content = ["", ` ${MODE_DISPLAY_NAME[modeCategory]} `, ""];
+          windowWidth = MODE_DISPLAY_NAME[modeCategory].length + 2;
+          windowHeight = 3;
+          break;
       }
-      default: // "text"
-        content = ["", ` ${MODE_DISPLAY_NAME[modeCategory]} `, ""];
-        windowWidth = MODE_DISPLAY_NAME[modeCategory].length + 2;
-        windowHeight = 3;
-        break;
+      toastCache.set(cacheKey, {
+        content,
+        width: windowWidth,
+        height: windowHeight,
+      });
     }
 
     if (screenWidth === 0 || screenHeight === 0) {
