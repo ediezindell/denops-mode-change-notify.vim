@@ -39,20 +39,15 @@ type Options = {
   highlight: string;
 };
 
+const VIM_BORDER_CHARS: Record<string, string[]> = {
+  single: ["─", "│", "─", "│", "┌", "┐", "┘", "└"],
+  double: ["═", "║", "═", "║", "╔", "╗", "╝", "╚"],
+  rounded: ["─", "│", "─", "│", "╭", "╮", "╯", "╰"],
+  solid: [" ", " ", " ", " ", " ", " ", " ", " "],
+};
+
 const getVimBorderChars = (style: string): string[] | undefined => {
-  switch (style) {
-    case "single":
-      return ["─", "│", "─", "│", "┌", "┐", "┘", "└"];
-    case "double":
-      return ["═", "║", "═", "║", "╔", "╗", "╝", "╚"];
-    case "rounded":
-      return ["─", "│", "─", "│", "╭", "╮", "╯", "╰"];
-    case "solid":
-      return [" ", " ", " ", " ", " ", " ", " ", " "];
-    default:
-      // "none", "shadow", and others fallback to default (empty) which allows simple border if border prop is set
-      return undefined;
-  }
+  return VIM_BORDER_CHARS[style];
 };
 
 export const main: Entrypoint = (denops) => {
@@ -258,6 +253,7 @@ export const main: Entrypoint = (denops) => {
       const border_prop = options.border !== "none"
         ? [1, 1, 1, 1]
         : [0, 0, 0, 0];
+      const borderChars = getVimBorderChars(options.border);
       const popupOptions = {
         line: row,
         col,
@@ -266,9 +262,7 @@ export const main: Entrypoint = (denops) => {
         focusable: false,
         highlight: options.highlight,
         borderhighlight: [options.highlight],
-        ...(getVimBorderChars(options.border)
-          ? { borderchars: getVimBorderChars(options.border) }
-          : {}),
+        ...(borderChars ? { borderchars: borderChars } : {}),
       };
 
       // Batch close and create operations to reduce RPC roundtrips
