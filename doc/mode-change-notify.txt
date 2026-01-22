@@ -110,10 +110,8 @@ A dictionary containing all settings for this plugin.
     Description:  Controls the style of the notification window's border.
     Type:         String (one of: 'none', 'single', 'double', 'rounded', 'solid', 'shadow')
     Default:      'rounded'
-    Note:         This option is only fully supported in *Neovim*. In *Vim*,
-                  which uses pop-up windows, any value other than 'none'
-                  will simply draw a default border. The specific styles
-                  like 'rounded' or 'double' will not apply.
+    Note:         In *Vim*, the 'shadow' style is not supported and will fall
+                  back to a default border.
 
 'timeout'                       *mode-change-notify-timeout*
     Description:  Controls how long the notification is visible, in
