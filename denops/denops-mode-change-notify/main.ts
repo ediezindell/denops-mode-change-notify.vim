@@ -144,16 +144,7 @@ export const main: Entrypoint = (denops) => {
 
   const ensureVimPopup = async () => {
     if (denops.meta.host !== "vim") return;
-    if (vimPopupWinid) {
-      try {
-        const pos = await denops.call("popup_getpos", vimPopupWinid);
-        if (pos && typeof pos === "object" && Object.keys(pos).length > 0) {
-          return;
-        }
-      } catch (_) {
-        // invalid
-      }
-    }
+    if (vimPopupWinid) return;
     vimPopupWinid = await denops.call("popup_create", [], {
       hidden: true,
     }) as number;
@@ -337,10 +328,20 @@ export const main: Entrypoint = (denops) => {
       };
 
       // Batch operations
-      await batch.collect(denops, (helper) => {
-        helper.call("popup_settext", vimPopupWinid, content);
-        helper.call("popup_setoptions", vimPopupWinid, popupOptions);
-      });
+      try {
+        await batch.collect(denops, (helper) => {
+          helper.call("popup_settext", vimPopupWinid, content);
+          helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+        });
+      } catch (_) {
+        // Fallback: window might be closed/invalid. Recreate and retry.
+        vimPopupWinid = null;
+        await ensureVimPopup();
+        await batch.collect(denops, (helper) => {
+          helper.call("popup_settext", vimPopupWinid, content);
+          helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+        });
+      }
 
       timerId = setTimeout(async () => {
         try {
