@@ -9,3 +9,7 @@
 ## 2026-01-22 - Caching Static Data Transformations
 **Learning:** Frequent event handlers (like `ModeChanged`) that re-calculate properties of static data (like dimensions of ASCII art) create unnecessary garbage and CPU load.
 **Action:** Memoize derived properties of static assets in module-level or closure-level caches to avoid recalculation in hot loops.
+
+## 2026-01-23 - Batching Simple Expression Evaluations
+**Learning:** `denops.eval` incurs a full RPC roundtrip for each call. Multiple simple variable retrievals (like `&columns`, `&lines`) should be combined into a single list or dictionary evaluation.
+**Action:** Replace sequential `denops.eval` calls with a single `denops.eval("[val1, val2]")` and destructure the result.
