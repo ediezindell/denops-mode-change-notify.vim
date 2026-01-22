@@ -79,6 +79,14 @@ export const main: Entrypoint = (denops) => {
   // Cache screen dimensions to avoid RPC calls on every mode change
   let screenWidth = 0;
   let screenHeight = 0;
+  // Cache ambiwidth to avoid RPC calls on every mode change
+  let currentAmbiwidth = "single";
+
+  const updateAmbiwidth = async () => {
+    const val = await denops.eval("&ambiwidth");
+    assert(val, is.String);
+    currentAmbiwidth = val;
+  };
 
   const updateDimensions = async () => {
     if (denops.meta.host === "nvim") {
@@ -122,6 +130,7 @@ export const main: Entrypoint = (denops) => {
   const setupAutocommands = async () => {
     await loadOptions();
     await updateDimensions();
+    await updateAmbiwidth();
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       helper.define(
@@ -153,7 +162,7 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    const ambiwidth = await denops.eval("&ambiwidth");
+    const ambiwidth = currentAmbiwidth;
     let style = options.style;
     if (ambiwidth === "double" && style === "ascii_filled") {
       style = "ascii_outline";
