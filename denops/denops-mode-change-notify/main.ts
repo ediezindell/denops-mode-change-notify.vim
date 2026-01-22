@@ -173,10 +173,18 @@ export const main: Entrypoint = (denops) => {
   // Reuse buffer in Neovim to avoid creating new buffers for every toast
   let lastNvimBufnr: number | null = null;
 
+  // Track the timer for closing the window to avoid stacking close requests
+  let timerId: number | undefined;
+
   const showToast = async (
     denops: Denops,
     modeCategory: ModeCategory,
   ): Promise<void> => {
+    if (timerId !== undefined) {
+      clearTimeout(timerId);
+      timerId = undefined;
+    }
+
     let content: string[] = [];
     let windowWidth: number;
     let windowHeight: number;
@@ -292,7 +300,7 @@ export const main: Entrypoint = (denops) => {
       // We avoid extra RPC calls to set these options.
 
       lastVimPopupWinid = winid;
-      setTimeout(async () => {
+      timerId = setTimeout(async () => {
         try {
           await denops.call("popup_close", winid);
         } catch (error) {
@@ -363,7 +371,7 @@ export const main: Entrypoint = (denops) => {
 
       assert(win, is.Number);
       lastNvimWinid = win as number;
-      setTimeout(async () => {
+      timerId = setTimeout(async () => {
         try {
           await nvim.nvim_win_close(denops, win as number, true);
         } catch (_) {
