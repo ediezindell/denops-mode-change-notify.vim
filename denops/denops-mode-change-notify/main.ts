@@ -270,64 +270,58 @@ export const main: Entrypoint = (denops) => {
         await createBuffer();
       }
 
-      const setLines = (denops: Denops, buf: number) =>
-        nvim.nvim_buf_set_lines(denops, buf, 0, -1, false, content);
-      const openWin = (denops: Denops, buf: number) =>
-        nvim.nvim_open_win(denops, buf, false, {
-          relative: "editor",
-          width: windowWidth,
-          height: windowHeight,
-          row,
-          col,
-          style: "minimal",
-          border: options.border,
-          focusable: false,
-          noautocmd: true,
-        });
-
       let win: unknown;
 
-      const executeBatch = async (
-        helper: Denops,
+      const updateWindow = async (
+        denops: Denops,
         bufnr: number,
       ): Promise<unknown> => {
-        const res = await batch.collect(helper, (h) => {
-          const cmds: Promise<unknown>[] = [];
-          if (lastNvimWinid) {
-            // Batch the close operation with creation.
-            // Use pcall via lua to safely close previous window without error if invalid.
-            cmds.push(
-              nvim.nvim_exec_lua(
-                h,
-                "return pcall(vim.api.nvim_win_close, ...)",
-                [lastNvimWinid, true],
-              ),
-            );
-          }
-          cmds.push(setLines(h, bufnr));
-          cmds.push(openWin(h, bufnr));
-          return cmds;
-        });
-        // The last result is the window ID from openWin
-        return res[res.length - 1];
+        return await nvim.nvim_exec_lua(
+          denops,
+          `
+          local bufnr, content, width, height, row, col, border, highlight, last_winid = ...
+          if last_winid and last_winid ~= vim.NIL then
+            pcall(vim.api.nvim_win_close, last_winid, true)
+          end
+          vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
+          local win = vim.api.nvim_open_win(bufnr, false, {
+            relative = "editor",
+            width = width,
+            height = height,
+            row = row,
+            col = col,
+            style = "minimal",
+            border = border,
+            focusable = false,
+            noautocmd = true
+          })
+          vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
+          return win
+          `,
+          [
+            bufnr,
+            content,
+            windowWidth,
+            windowHeight,
+            row,
+            col,
+            options.border,
+            options.highlight,
+            lastNvimWinid ?? null,
+          ],
+        );
       };
 
       try {
-        win = await executeBatch(denops, lastNvimBufnr!);
+        win = await updateWindow(denops, lastNvimBufnr!);
       } catch (_) {
         // If buffer reuse failed (e.g. user deleted buffer), create a new one
         await createBuffer();
-        win = await executeBatch(denops, lastNvimBufnr!);
+        win = await updateWindow(denops, lastNvimBufnr!);
       }
 
       assert(win, is.Number);
-      await nvim.nvim_win_set_option(
-        denops,
-        win as number,
-        "winhighlight",
-        `Normal:${options.highlight}`,
-      );
-      lastNvimWinid = win;
+      lastNvimWinid = win as number;
       setTimeout(async () => {
         try {
           await nvim.nvim_win_close(denops, win as number, true);
