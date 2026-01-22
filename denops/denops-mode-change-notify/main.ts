@@ -98,6 +98,9 @@ export const main: Entrypoint = (denops) => {
   // Cache ambiwidth to avoid RPC calls on every mode change
   let currentAmbiwidth = "single";
 
+  // Cache ASCII art dimensions to avoid recalculating on every mode change
+  const dimensionsCache = new Map<string, { width: number; height: number }>();
+
   const updateAmbiwidth = async () => {
     const val = await denops.eval("&ambiwidth");
     assert(val, is.String);
@@ -193,10 +196,20 @@ export const main: Entrypoint = (denops) => {
         const art = artSet[modeCategory];
         if (!art) return;
 
-        const artWidth = Math.max(...art.map((l) => l.length));
         content = art;
-        windowWidth = artWidth;
-        windowHeight = content.length;
+
+        const cacheKey = `${style}:${modeCategory}`;
+        const cached = dimensionsCache.get(cacheKey);
+
+        if (cached) {
+          windowWidth = cached.width;
+          windowHeight = cached.height;
+        } else {
+          const artWidth = Math.max(...art.map((l) => l.length));
+          windowWidth = artWidth;
+          windowHeight = content.length;
+          dimensionsCache.set(cacheKey, { width: windowWidth, height: windowHeight });
+        }
         break;
       }
       default: // "text"
