@@ -125,22 +125,16 @@ export const main: Entrypoint = (denops) => {
           screenHeight = uis[0].height;
         }
       } catch (_) {
-        const [cols, lines] = await Promise.all([
-          denops.eval("&columns"),
-          denops.eval("&lines"),
-        ]);
-        assert(cols, is.Number);
-        assert(lines, is.Number);
+        const result = await denops.eval("[&columns, &lines]");
+        assert(result, is.ArrayOf(is.Number));
+        const [cols, lines] = result;
         screenWidth = cols;
         screenHeight = lines;
       }
     } else {
-      const [cols, lines] = await Promise.all([
-        denops.eval("&columns"),
-        denops.eval("&lines"),
-      ]);
-      assert(cols, is.Number);
-      assert(lines, is.Number);
+      const result = await denops.eval("[&columns, &lines]");
+      assert(result, is.ArrayOf(is.Number));
+      const [cols, lines] = result;
       screenWidth = cols;
       screenHeight = lines;
     }
