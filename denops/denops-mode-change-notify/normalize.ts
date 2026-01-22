@@ -1,7 +1,8 @@
 import { ModeCategory } from "./ModeCategory.ts";
 
+const VISUAL_VARIANTS = new Set<string>(["v", "V", "\x16", "^V", "<C-v>"]); // raw mode strings indicating Visual family
+
 const isVisualVariant = (x: string): boolean => {
-  const VISUAL_VARIANTS = new Set<string>(["v", "V", "\x16", "^V", "<C-v>"]); // raw mode strings indicating Visual family
   const lower = x.toLowerCase();
   return VISUAL_VARIANTS.has(x) || lower === "<c-v>" || x === "^V";
 };
