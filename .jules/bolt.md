@@ -13,3 +13,7 @@
 ## 2026-01-23 - Batching Simple Expression Evaluations
 **Learning:** `denops.eval` incurs a full RPC roundtrip for each call. Multiple simple variable retrievals (like `&columns`, `&lines`) should be combined into a single list or dictionary evaluation.
 **Action:** Replace sequential `denops.eval` calls with a single `denops.eval("[val1, val2]")` and destructure the result.
+
+## 2026-01-24 - Reusing Neovim Floating Windows
+**Learning:** Destroying (`nvim_win_close`) and recreating (`nvim_open_win`) floating windows on every update is expensive. `nvim_win_set_config` allows modifying an existing window's layout (including border) in-place, which is significantly faster and prevents flickering.
+**Action:** When updating a persistent UI element like a notification, try to reuse the existing window ID with `nvim_win_set_config` (wrapped in `pcall`) before falling back to creating a new one.

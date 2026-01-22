@@ -374,21 +374,38 @@ export const main: Entrypoint = (denops) => {
           denops,
           `
           local bufnr, content, width, height, row, col, border, highlight, last_winid = ...
-          if last_winid and last_winid ~= vim.NIL then
-            pcall(vim.api.nvim_win_close, last_winid, true)
-          end
           vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
-          local win = vim.api.nvim_open_win(bufnr, false, {
-            relative = "editor",
-            width = width,
-            height = height,
-            row = row,
-            col = col,
-            style = "minimal",
-            border = border,
-            focusable = false,
-            noautocmd = true
-          })
+          local win = last_winid
+          local reused = false
+          if win and win ~= vim.NIL and vim.api.nvim_win_is_valid(win) then
+            local success, _ = pcall(vim.api.nvim_win_set_config, win, {
+              relative = "editor",
+              width = width,
+              height = height,
+              row = row,
+              col = col,
+              border = border,
+              focusable = false,
+            })
+            if success then
+              reused = true
+            else
+              pcall(vim.api.nvim_win_close, win, true)
+            end
+          end
+          if not reused then
+            win = vim.api.nvim_open_win(bufnr, false, {
+              relative = "editor",
+              width = width,
+              height = height,
+              row = row,
+              col = col,
+              style = "minimal",
+              border = border,
+              focusable = false,
+              noautocmd = true
+            })
+          end
           vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
           return win
           `,
