@@ -105,6 +105,60 @@ export const main: Entrypoint = (denops) => {
     currentAmbiwidth = val;
   };
 
+  const calculatePosition = (
+    windowWidth: number,
+    windowHeight: number,
+    width: number,
+    height: number,
+  ): { row: number; col: number } => {
+    let row: number;
+    let col: number;
+    const margin = 1;
+
+    switch (options.position) {
+      case "top_left":
+        row = margin;
+        col = margin;
+        break;
+      case "top_right":
+        row = margin;
+        col = width - windowWidth - margin;
+        break;
+      case "bottom_left":
+        row = height - windowHeight - margin;
+        col = margin;
+        break;
+      case "bottom_right":
+        row = height - windowHeight - margin;
+        col = width - windowWidth - margin;
+        break;
+      default: // center
+        row = Math.floor((height - windowHeight) / 2);
+        col = Math.floor((width - windowWidth) / 2);
+        break;
+    }
+    return { row, col };
+  };
+
+  let vimPopupWinid: number | null = null;
+
+  const ensureVimPopup = async () => {
+    if (denops.meta.host !== "vim") return;
+    if (vimPopupWinid) {
+      try {
+        const pos = await denops.call("popup_getpos", vimPopupWinid);
+        if (pos && typeof pos === "object" && Object.keys(pos).length > 0) {
+          return;
+        }
+      } catch (_) {
+        // invalid
+      }
+    }
+    vimPopupWinid = await denops.call("popup_create", [], {
+      hidden: true,
+    }) as number;
+  };
+
   const updateDimensions = async () => {
     if (denops.meta.host === "nvim") {
       try {
@@ -135,6 +189,28 @@ export const main: Entrypoint = (denops) => {
       const [cols, lines] = result;
       screenWidth = cols;
       screenHeight = lines;
+
+      // Update Vim popup position if it exists
+      if (vimPopupWinid) {
+        try {
+          const pos = await denops.call("popup_getpos", vimPopupWinid) as {
+            width: number;
+            height: number;
+          };
+          const { row, col } = calculatePosition(
+            pos.width,
+            pos.height,
+            screenWidth,
+            screenHeight,
+          );
+          await denops.call("popup_move", vimPopupWinid, {
+            line: row,
+            col: col,
+          });
+        } catch (_) {
+          // ignore
+        }
+      }
     }
   };
 
@@ -142,6 +218,7 @@ export const main: Entrypoint = (denops) => {
     await loadOptions();
     await updateDimensions();
     await updateAmbiwidth();
+    await ensureVimPopup();
 
     autocmd.group(denops, "mode-change-notify", (helper) => {
       helper.define(
@@ -154,18 +231,22 @@ export const main: Entrypoint = (denops) => {
         "*",
         `call denops#notify('${denops.name}', 'updateDimensions', [])`,
       );
+      helper.define(
+        "VimLeave",
+        "*",
+        `call denops#notify('${denops.name}', 'cleanup', [])`,
+      );
     });
   };
 
   setupAutocommands();
 
-  // Keep track of last notification windows to avoid stacking issues
-  let lastVimPopupWinid: number | null = null;
+  // Keep track of last notification windows to avoid stacking issues (Neovim)
   let lastNvimWinid: number | null = null;
   // Reuse buffer in Neovim to avoid creating new buffers for every toast
   let lastNvimBufnr: number | null = null;
 
-  // Track the timer for closing the window to avoid stacking close requests
+  // Track the timer for closing the window
   let timerId: number | undefined;
 
   const showToast = async (
@@ -229,34 +310,16 @@ export const main: Entrypoint = (denops) => {
     const width = screenWidth;
     const height = screenHeight;
 
-    let row: number;
-    let col: number;
-    const margin = 1;
-
-    switch (options.position) {
-      case "top_left":
-        row = margin;
-        col = margin;
-        break;
-      case "top_right":
-        row = margin;
-        col = width - windowWidth - margin;
-        break;
-      case "bottom_left":
-        row = height - windowHeight - margin;
-        col = margin;
-        break;
-      case "bottom_right":
-        row = height - windowHeight - margin;
-        col = width - windowWidth - margin;
-        break;
-      default: // center
-        row = Math.floor((height - windowHeight) / 2);
-        col = Math.floor((width - windowWidth) / 2);
-        break;
-    }
+    const { row, col } = calculatePosition(
+      windowWidth,
+      windowHeight,
+      width,
+      height,
+    );
 
     if (denops.meta.host === "vim") {
+      await ensureVimPopup();
+
       const border_prop = options.border !== "none"
         ? [1, 1, 1, 1]
         : [0, 0, 0, 0];
@@ -269,37 +332,24 @@ export const main: Entrypoint = (denops) => {
         focusable: false,
         highlight: options.highlight,
         borderhighlight: [options.highlight],
+        hidden: false,
         ...(borderChars ? { borderchars: borderChars } : {}),
       };
 
-      // Batch close and create operations to reduce RPC roundtrips
-      const results = await batch.collect(denops, (helper) => {
-        const cmds: Promise<unknown>[] = [];
-        if (lastVimPopupWinid) {
-          // Use try-catch in Vimscript to safely close without aborting if window is gone
-          cmds.push(
-            helper.cmd(
-              `try | call popup_close(${lastVimPopupWinid}) | catch | endtry`,
-            ),
-          );
-        }
-        cmds.push(helper.call("popup_create", content, popupOptions));
-        return cmds;
+      // Batch operations
+      await batch.collect(denops, (helper) => {
+        helper.call("popup_settext", vimPopupWinid, content);
+        helper.call("popup_setoptions", vimPopupWinid, popupOptions);
       });
 
-      const winid = results[results.length - 1] as number;
-
-      // NOTE: popup_create creates a "minimal" window by default.
-      // 'number', 'relativenumber', 'signcolumn', 'foldcolumn' are 0.
-      // 'statusline' is empty, 'cursorline' is off. 'list' defaults to global (usually off).
-      // We avoid extra RPC calls to set these options.
-
-      lastVimPopupWinid = winid;
       timerId = setTimeout(async () => {
         try {
-          await denops.call("popup_close", winid);
+          // Hide instead of close
+          await denops.call("popup_setoptions", vimPopupWinid, {
+            hidden: true,
+          });
         } catch (error) {
-          console.warn(`Failed to close window: ${error}`);
+          console.warn(`Failed to hide window: ${error}`);
         }
       }, options.timeout);
     } else {
@@ -391,6 +441,17 @@ export const main: Entrypoint = (denops) => {
 
     async updateDimensions(): Promise<void> {
       await updateDimensions();
+    },
+
+    async cleanup(): Promise<void> {
+      if (denops.meta.host === "vim" && vimPopupWinid) {
+        try {
+          await denops.call("popup_close", vimPopupWinid);
+        } catch (_) {
+          // ignore
+        }
+        vimPopupWinid = null;
+      }
     },
   };
 };
