@@ -17,3 +17,7 @@
 ## 2026-01-24 - Reusing Neovim Floating Windows
 **Learning:** Destroying (`nvim_win_close`) and recreating (`nvim_open_win`) floating windows on every update is expensive. `nvim_win_set_config` allows modifying an existing window's layout (including border) in-place, which is significantly faster and prevents flickering.
 **Action:** When updating a persistent UI element like a notification, try to reuse the existing window ID with `nvim_win_set_config` (wrapped in `pcall`) before falling back to creating a new one.
+
+## 2026-01-25 - Optimistic RPC Updates
+**Learning:** Checking resource validity (e.g., `popup_getpos`) before usage adds unavoidable latency (RTT) to every operation. In a networked plugin system like Denops, failure is cheap but latency is expensive.
+**Action:** Replace "check-then-act" with "act-then-recover". Assume resources are valid, trap errors during usage, and implement recovery/recreation logic in the `catch` block.
