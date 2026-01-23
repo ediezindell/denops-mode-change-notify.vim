@@ -211,6 +211,52 @@ export const main: Entrypoint = (denops) => {
     await updateAmbiwidth();
     await ensureVimPopup();
 
+    if (denops.meta.host === "nvim") {
+      await nvim.nvim_exec_lua(
+        denops,
+        `
+        _G.DenopsModeChangeNotify = _G.DenopsModeChangeNotify or {}
+        _G.DenopsModeChangeNotify.update_window = function(bufnr, content, width, height, row, col, border, highlight, last_winid)
+          vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
+          local win = last_winid
+          local reused = false
+          if win and win ~= vim.NIL and vim.api.nvim_win_is_valid(win) then
+            local success, _ = pcall(vim.api.nvim_win_set_config, win, {
+              relative = "editor",
+              width = width,
+              height = height,
+              row = row,
+              col = col,
+              border = border,
+              focusable = false,
+            })
+            if success then
+              reused = true
+            else
+              pcall(vim.api.nvim_win_close, win, true)
+            end
+          end
+          if not reused then
+            win = vim.api.nvim_open_win(bufnr, false, {
+              relative = "editor",
+              width = width,
+              height = height,
+              row = row,
+              col = col,
+              style = "minimal",
+              border = border,
+              focusable = false,
+              noautocmd = true
+            })
+          end
+          vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
+          return win
+        end
+      `,
+        [],
+      );
+    }
+
     autocmd.group(denops, "mode-change-notify", (helper) => {
       helper.define(
         "ModeChanged",
@@ -373,43 +419,7 @@ export const main: Entrypoint = (denops) => {
       ): Promise<unknown> => {
         return await nvim.nvim_exec_lua(
           denops,
-          `
-          local bufnr, content, width, height, row, col, border, highlight, last_winid = ...
-          vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
-          local win = last_winid
-          local reused = false
-          if win and win ~= vim.NIL and vim.api.nvim_win_is_valid(win) then
-            local success, _ = pcall(vim.api.nvim_win_set_config, win, {
-              relative = "editor",
-              width = width,
-              height = height,
-              row = row,
-              col = col,
-              border = border,
-              focusable = false,
-            })
-            if success then
-              reused = true
-            else
-              pcall(vim.api.nvim_win_close, win, true)
-            end
-          end
-          if not reused then
-            win = vim.api.nvim_open_win(bufnr, false, {
-              relative = "editor",
-              width = width,
-              height = height,
-              row = row,
-              col = col,
-              style = "minimal",
-              border = border,
-              focusable = false,
-              noautocmd = true
-            })
-          end
-          vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
-          return win
-          `,
+          `return _G.DenopsModeChangeNotify.update_window(...)`,
           [
             bufnr,
             content,
