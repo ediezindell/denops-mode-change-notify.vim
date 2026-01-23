@@ -92,11 +92,14 @@ export const main: Entrypoint = (denops) => {
   let screenHeight = 0;
   // Cache ambiwidth to avoid RPC calls on every mode change
   let currentAmbiwidth = "single";
+  // Cache last displayed toast dimensions to avoid RPC calls during resize
+  let lastToastWidth = 0;
+  let lastToastHeight = 0;
 
   // Cache ASCII art dimensions to avoid recalculating on every mode change
   const toastCache = new Map<
     string,
-    { content: string[]; width: number; height: number }
+    { content: string[]; width: number; height: number; bufnr?: number }
   >();
 
   const updateAmbiwidth = async () => {
@@ -184,13 +187,19 @@ export const main: Entrypoint = (denops) => {
       // Update Vim popup position if it exists
       if (vimPopupWinid) {
         try {
-          const pos = await denops.call("popup_getpos", vimPopupWinid) as {
-            width: number;
-            height: number;
-          };
+          let w = lastToastWidth;
+          let h = lastToastHeight;
+          if (w === 0 || h === 0) {
+            const pos = await denops.call("popup_getpos", vimPopupWinid) as {
+              width: number;
+              height: number;
+            };
+            w = pos.width;
+            h = pos.height;
+          }
           const { row, col } = calculatePosition(
-            pos.width,
-            pos.height,
+            w,
+            h,
             screenWidth,
             screenHeight,
           );
@@ -206,18 +215,22 @@ export const main: Entrypoint = (denops) => {
   };
 
   const setupAutocommands = async () => {
-    await loadOptions();
-    await updateDimensions();
-    await updateAmbiwidth();
-    await ensureVimPopup();
+    await Promise.all([
+      loadOptions(),
+      updateDimensions(),
+      updateAmbiwidth(),
+      ensureVimPopup(),
+    ]);
 
     if (denops.meta.host === "nvim") {
       await nvim.nvim_exec_lua(
         denops,
         `
         _G.DenopsModeChangeNotify = _G.DenopsModeChangeNotify or {}
-        _G.DenopsModeChangeNotify.update_window = function(bufnr, content, width, height, row, col, border, highlight, last_winid)
-          vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
+        _G.DenopsModeChangeNotify.update_window = function(bufnr, update_content, content, width, height, row, col, border, highlight, last_winid)
+          if update_content then
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
+          end
           local win = last_winid
           local reused = false
           if win and win ~= vim.NIL and vim.api.nvim_win_is_valid(win) then
@@ -232,6 +245,9 @@ export const main: Entrypoint = (denops) => {
             })
             if success then
               reused = true
+              if vim.api.nvim_win_get_buf(win) ~= bufnr then
+                 vim.api.nvim_win_set_buf(win, bufnr)
+              end
             else
               pcall(vim.api.nvim_win_close, win, true)
             end
@@ -280,8 +296,6 @@ export const main: Entrypoint = (denops) => {
 
   // Keep track of last notification windows to avoid stacking issues (Neovim)
   let lastNvimWinid: number | null = null;
-  // Reuse buffer in Neovim to avoid creating new buffers for every toast
-  let lastNvimBufnr: number | null = null;
 
   // Track the timer for closing the window
   let timerId: number | undefined;
@@ -306,7 +320,7 @@ export const main: Entrypoint = (denops) => {
     }
 
     const cacheKey = `${style}:${modeCategory}`;
-    const cached = toastCache.get(cacheKey);
+    let cached = toastCache.get(cacheKey);
 
     if (cached) {
       content = cached.content;
@@ -334,11 +348,12 @@ export const main: Entrypoint = (denops) => {
           windowHeight = 3;
           break;
       }
-      toastCache.set(cacheKey, {
+      cached = {
         content,
         width: windowWidth,
         height: windowHeight,
-      });
+      };
+      toastCache.set(cacheKey, cached);
     }
 
     if (screenWidth === 0 || screenHeight === 0) {
@@ -346,6 +361,9 @@ export const main: Entrypoint = (denops) => {
     }
     const width = screenWidth;
     const height = screenHeight;
+
+    lastToastWidth = windowWidth;
+    lastToastHeight = windowHeight;
 
     const { row, col } = calculatePosition(
       windowWidth,
@@ -400,29 +418,30 @@ export const main: Entrypoint = (denops) => {
         }
       }, options.timeout);
     } else {
-      const createBuffer = async () => {
-        const buf = await nvim.nvim_create_buf(denops, false, true);
-        await nvim.nvim_buf_set_option(denops, buf, "bufhidden", "hide");
-        lastNvimBufnr = buf;
-        return buf;
-      };
+      let bufnr = cached.bufnr;
+      let shouldUpdateContent = false;
 
-      if (!lastNvimBufnr) {
-        await createBuffer();
+      // Create buffer if missing
+      if (!bufnr) {
+        bufnr = await nvim.nvim_create_buf(denops, false, true);
+        await nvim.nvim_buf_set_option(denops, bufnr, "bufhidden", "hide");
+        cached.bufnr = bufnr;
+        shouldUpdateContent = true;
       }
 
       let win: unknown;
 
       const updateWindow = async (
-        denops: Denops,
-        bufnr: number,
+        buf: number,
+        update: boolean,
       ): Promise<unknown> => {
         return await nvim.nvim_exec_lua(
           denops,
           `return _G.DenopsModeChangeNotify.update_window(...)`,
           [
-            bufnr,
-            content,
+            buf,
+            update,
+            update ? content : null,
             windowWidth,
             windowHeight,
             row,
@@ -435,11 +454,13 @@ export const main: Entrypoint = (denops) => {
       };
 
       try {
-        win = await updateWindow(denops, lastNvimBufnr!);
+        win = await updateWindow(bufnr, shouldUpdateContent);
       } catch (_) {
-        // If buffer reuse failed (e.g. user deleted buffer), create a new one
-        await createBuffer();
-        win = await updateWindow(denops, lastNvimBufnr!);
+        // Fallback: Buffer might be invalid. Create new one.
+        bufnr = await nvim.nvim_create_buf(denops, false, true);
+        await nvim.nvim_buf_set_option(denops, bufnr, "bufhidden", "hide");
+        cached.bufnr = bufnr;
+        win = await updateWindow(bufnr, true);
       }
 
       assert(win, is.Number);
