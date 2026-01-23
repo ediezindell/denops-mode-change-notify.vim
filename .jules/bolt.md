@@ -21,3 +21,7 @@
 ## 2026-01-25 - Optimistic RPC Updates
 **Learning:** Checking resource validity (e.g., `popup_getpos`) before usage adds unavoidable latency (RTT) to every operation. In a networked plugin system like Denops, failure is cheap but latency is expensive.
 **Action:** Replace "check-then-act" with "act-then-recover". Assume resources are valid, trap errors during usage, and implement recovery/recreation logic in the `catch` block.
+
+## 2026-01-26 - Pre-compiling Lua Functions
+**Learning:** Sending Lua source code via `nvim_exec_lua` on every hot-path event incurs repeated parsing and compilation overhead in Neovim, and increases RPC payload size.
+**Action:** Define complex Lua logic as a global function (e.g., in `_G`) during plugin initialization, and call this function with arguments in the event handler.
