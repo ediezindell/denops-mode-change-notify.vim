@@ -114,33 +114,29 @@ export const main: Entrypoint = (denops) => {
     width: number,
     height: number,
   ): { row: number; col: number } => {
-    let row: number;
-    let col: number;
     const margin = 1;
 
-    switch (options.position) {
-      case "top_left":
-        row = margin;
-        col = margin;
-        break;
-      case "top_right":
-        row = margin;
-        col = width - windowWidth - margin;
-        break;
-      case "bottom_left":
-        row = height - windowHeight - margin;
-        col = margin;
-        break;
-      case "bottom_right":
-        row = height - windowHeight - margin;
-        col = width - windowWidth - margin;
-        break;
-      default: // center
-        row = Math.floor((height - windowHeight) / 2);
-        col = Math.floor((width - windowWidth) / 2);
-        break;
+    if (options.position === "top_left") {
+      return { row: margin, col: margin };
     }
-    return { row, col };
+    if (options.position === "top_right") {
+      return { row: margin, col: width - windowWidth - margin };
+    }
+    if (options.position === "bottom_left") {
+      return { row: height - windowHeight - margin, col: margin };
+    }
+    if (options.position === "bottom_right") {
+      return {
+        row: height - windowHeight - margin,
+        col: width - windowWidth - margin,
+      };
+    }
+
+    // Default: center
+    return {
+      row: Math.floor((height - windowHeight) / 2),
+      col: Math.floor((width - windowWidth) / 2),
+    };
   };
 
   let vimPopupWinid: number | null = null;
