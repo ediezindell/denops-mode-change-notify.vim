@@ -180,22 +180,14 @@ export const main: Entrypoint = (denops) => {
       screenWidth = cols;
       screenHeight = lines;
 
-      // Update Vim popup position if it exists
-      if (vimPopupWinid) {
+      // Performance: Avoid redundant `popup_getpos` RPC call. `lastToastWidth`
+      // is a reliable cache of the window's last known width, so we can skip
+      // the async query and directly calculate the new position.
+      if (vimPopupWinid && lastToastWidth > 0) {
         try {
-          let w = lastToastWidth;
-          let h = lastToastHeight;
-          if (w === 0 || h === 0) {
-            const pos = await denops.call("popup_getpos", vimPopupWinid) as {
-              width: number;
-              height: number;
-            };
-            w = pos.width;
-            h = pos.height;
-          }
           const { row, col } = calculatePosition(
-            w,
-            h,
+            lastToastWidth,
+            lastToastHeight,
             screenWidth,
             screenHeight,
           );
@@ -204,7 +196,7 @@ export const main: Entrypoint = (denops) => {
             col: col,
           });
         } catch (_) {
-          // ignore
+          // ignore: window may have been closed
         }
       }
     }
