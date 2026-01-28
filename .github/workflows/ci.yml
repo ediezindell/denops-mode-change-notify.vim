@@ -19,7 +19,7 @@ jobs:
           cache: true
 
       - name: Check Deno types
-        run: deno check denops/denops-mode-change-notify/*.ts
+        run: deno check denops/**/*.ts
 
       - name: Deno info (optional debug)
         run: deno info denops/denops-mode-change-notify/main.ts
