@@ -4,7 +4,12 @@ import * as batch from "jsr:@denops/std/batch";
 import * as vars from "jsr:@denops/std/variable";
 
 import { assert, is } from "jsr:@core/unknownutil";
-import { asciiArtFilled, asciiArtOutline } from "./asciiArts.ts";
+import { 
+  asciiArtFilled, 
+  asciiArtOutline, 
+  asciiArtFilledDimensions, 
+  asciiArtOutlineDimensions 
+} from "./asciiArts.ts";
 import {
   MODE_CATEGORIES,
   MODE_DISPLAY_NAME,
@@ -331,13 +336,18 @@ export const main: Entrypoint = (denops) => {
           const artSet = style === "ascii_outline"
             ? asciiArtOutline
             : asciiArtFilled;
+          const dimensions = style === "ascii_outline"
+            ? asciiArtOutlineDimensions
+            : asciiArtFilledDimensions;
           const art = artSet[modeCategory];
           if (!art) return;
 
           content = art;
-          const artWidth = Math.max(...art.map((l) => l.length));
-          windowWidth = artWidth;
-          windowHeight = content.length;
+          // Performance: Use pre-computed dimensions instead of calculating Math.max(...art.map())
+          // on every mode change. This eliminates expensive array operations in the hot path.
+          const precomputed = dimensions[modeCategory];
+          windowWidth = precomputed.width;
+          windowHeight = precomputed.height;
           break;
         }
         default: // "text"
