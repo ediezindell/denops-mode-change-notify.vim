@@ -317,12 +317,18 @@ export const main: Entrypoint = (denops) => {
     let windowHeight: number;
 
     const ambiwidth = currentAmbiwidth;
+    // Performance: Cache style comparison result to avoid repeated string comparisons
     let style = options.style;
-    if (ambiwidth === "double" && style === "ascii_filled") {
+    const isDoubleAmbiwidth = ambiwidth === "double";
+    const isFilledStyle = style === "ascii_filled";
+    
+    if (isDoubleAmbiwidth && isFilledStyle) {
       style = "ascii_outline";
     }
 
-    const cacheKey = `${style}:${modeCategory}`;
+    // Performance: Use string concatenation instead of template literal for cache key
+    // This is marginally faster and avoids template literal parsing overhead
+    const cacheKey = style + ":" + modeCategory;
     let cached = toastCache.get(cacheKey);
 
     if (cached) {
@@ -330,13 +336,15 @@ export const main: Entrypoint = (denops) => {
       windowWidth = cached.width;
       windowHeight = cached.height;
     } else {
+      // Performance: Cache style comparison to avoid repeated string equality checks
+      const isOutlineStyle = style === "ascii_outline";
       switch (style) {
         case "ascii_outline":
         case "ascii_filled": {
-          const artSet = style === "ascii_outline"
+          const artSet = isOutlineStyle
             ? asciiArtOutline
             : asciiArtFilled;
-          const dimensions = style === "ascii_outline"
+          const dimensions = isOutlineStyle
             ? asciiArtOutlineDimensions
             : asciiArtFilledDimensions;
           const art = artSet[modeCategory];
