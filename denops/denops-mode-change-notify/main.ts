@@ -210,8 +210,10 @@ export const main: Entrypoint = (denops) => {
     ]);
 
     if (denops.meta.host === "nvim") {
-      await denops.cmd(
-        `lua << EOF
+      await denops.call(
+        "luaeval",
+        "assert(loadstring(_A))()",
+        `
         _G.DenopsModeChangeNotify = _G.DenopsModeChangeNotify or {}
         _G.DenopsModeChangeNotify.create_buffer = function()
           local bufnr = vim.api.nvim_create_buf(false, true)
@@ -262,7 +264,7 @@ export const main: Entrypoint = (denops) => {
           vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
           return win
         end
-EOF`,
+      `,
       );
     }
 
