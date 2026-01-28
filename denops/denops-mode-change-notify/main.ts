@@ -404,6 +404,7 @@ export const main: Entrypoint = (denops) => {
         await batch.collect(denops, (helper) => {
           helper.call("popup_settext", vimPopupWinid, content);
           helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+          return []; // Return empty array to satisfy batch.collect return type
         });
       } catch (_) {
         // Fallback: window might be closed/invalid. Recreate and retry.
@@ -412,6 +413,7 @@ export const main: Entrypoint = (denops) => {
         await batch.collect(denops, (helper) => {
           helper.call("popup_settext", vimPopupWinid, content);
           helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+          return []; // Return empty array to satisfy batch.collect return type
         });
       }
 
