@@ -13,6 +13,8 @@ import {
 import { normalizeModeKey } from "./normalize.ts";
 
 const styles = ["text", "ascii_outline", "ascii_filled"] as const;
+type Style = (typeof styles)[number];
+
 const borders = [
   "none",
   "single",
@@ -33,7 +35,7 @@ type Position = (typeof positions)[number];
 
 type Options = {
   enabled_modes: ModeCategory[];
-  style: (typeof styles)[number];
+  style: Style;
   border: (typeof borders)[number];
   timeout: number;
   position: Position;
@@ -60,6 +62,40 @@ const VIM_BORDER_CHARS: Record<string, string[]> = {
 
 const getVimBorderChars = (style: string): string[] | undefined => {
   return VIM_BORDER_CHARS[style];
+};
+
+type ToastContent = {
+  content: string[];
+  width: number;
+  height: number;
+};
+
+const generateToastContent = (
+  style: Style,
+  modeCategory: ModeCategory,
+): ToastContent | undefined => {
+  switch (style) {
+    case "ascii_outline":
+    case "ascii_filled": {
+      const artSet = style === "ascii_outline"
+        ? asciiArtOutline
+        : asciiArtFilled;
+      const art = artSet[modeCategory];
+      if (!art) return undefined;
+
+      return {
+        content: art,
+        width: Math.max(...art.map((l) => l.length)),
+        height: art.length,
+      };
+    }
+    default: // "text"
+      return {
+        content: ["", ` ${MODE_DISPLAY_NAME[modeCategory]} `, ""],
+        width: MODE_DISPLAY_NAME[modeCategory].length + 2,
+        height: 3,
+      };
+  }
 };
 
 const calculatePosition = (
@@ -318,39 +354,16 @@ export const main: Entrypoint = (denops) => {
     const cacheKey = `${style}:${modeCategory}`;
     let cached = toastCache.get(cacheKey);
 
-    if (cached) {
-      content = cached.content;
-      windowWidth = cached.width;
-      windowHeight = cached.height;
-    } else {
-      switch (style) {
-        case "ascii_outline":
-        case "ascii_filled": {
-          const artSet = style === "ascii_outline"
-            ? asciiArtOutline
-            : asciiArtFilled;
-          const art = artSet[modeCategory];
-          if (!art) return;
-
-          content = art;
-          const artWidth = Math.max(...art.map((l) => l.length));
-          windowWidth = artWidth;
-          windowHeight = content.length;
-          break;
-        }
-        default: // "text"
-          content = ["", ` ${MODE_DISPLAY_NAME[modeCategory]} `, ""];
-          windowWidth = MODE_DISPLAY_NAME[modeCategory].length + 2;
-          windowHeight = 3;
-          break;
-      }
-      cached = {
-        content,
-        width: windowWidth,
-        height: windowHeight,
-      };
+    if (!cached) {
+      const generated = generateToastContent(style, modeCategory);
+      if (!generated) return;
+      cached = { ...generated };
       toastCache.set(cacheKey, cached);
     }
+
+    content = cached.content;
+    windowWidth = cached.width;
+    windowHeight = cached.height;
 
     if (screenWidth === 0 || screenHeight === 0) {
       await updateDimensions();
