@@ -29,14 +29,27 @@ const positions = [
   "center",
 ] as const;
 
+type Position = (typeof positions)[number];
+
 type Options = {
   enabled_modes: ModeCategory[];
   style: (typeof styles)[number];
   border: (typeof borders)[number];
   timeout: number;
-  position: (typeof positions)[number];
+  position: Position;
   highlight: string;
 };
+
+const isOptions = is.PartialOf(
+  is.ObjectOf({
+    enabled_modes: is.ArrayOf(is.LiteralOneOf(MODE_CATEGORIES)),
+    style: is.LiteralOneOf(styles),
+    border: is.LiteralOneOf(borders),
+    timeout: is.Number,
+    position: is.LiteralOneOf(positions),
+    highlight: is.String,
+  }),
+);
 
 const VIM_BORDER_CHARS: Record<string, string[]> = {
   single: ["─", "│", "─", "│", "┌", "┐", "┘", "└"],
@@ -47,6 +60,36 @@ const VIM_BORDER_CHARS: Record<string, string[]> = {
 
 const getVimBorderChars = (style: string): string[] | undefined => {
   return VIM_BORDER_CHARS[style];
+};
+
+const calculatePosition = (
+  toastWidth: number,
+  toastHeight: number,
+  screenWidth: number,
+  screenHeight: number,
+  position: Position,
+): { row: number; col: number } => {
+  const margin = 1;
+
+  switch (position) {
+    case "top_left":
+      return { row: margin, col: margin };
+    case "top_right":
+      return { row: margin, col: screenWidth - toastWidth - margin };
+    case "bottom_left":
+      return { row: screenHeight - toastHeight - margin, col: margin };
+    case "bottom_right":
+      return {
+        row: screenHeight - toastHeight - margin,
+        col: screenWidth - toastWidth - margin,
+      };
+    case "center":
+    default:
+      return {
+        row: Math.floor((screenHeight - toastHeight) / 2),
+        col: Math.floor((screenWidth - toastWidth) / 2),
+      };
+  }
 };
 
 export const main: Entrypoint = (denops) => {
@@ -66,19 +109,7 @@ export const main: Entrypoint = (denops) => {
       "mode_change_notify_options",
       {},
     );
-    assert(
-      userOptions,
-      is.PartialOf(
-        is.ObjectOf({
-          enabled_modes: is.ArrayOf(is.LiteralOneOf(MODE_CATEGORIES)),
-          style: is.LiteralOneOf(styles),
-          border: is.LiteralOneOf(borders),
-          timeout: is.Number,
-          position: is.LiteralOneOf(positions),
-          highlight: is.String,
-        }),
-      ),
-    );
+    assert(userOptions, isOptions);
 
     options = {
       ...defaultOptions,
@@ -105,37 +136,6 @@ export const main: Entrypoint = (denops) => {
     const val = await denops.eval("&ambiwidth");
     assert(val, is.String);
     currentAmbiwidth = val;
-  };
-
-  const calculatePosition = (
-    windowWidth: number,
-    windowHeight: number,
-    width: number,
-    height: number,
-  ): { row: number; col: number } => {
-    const margin = 1;
-
-    if (options.position === "top_left") {
-      return { row: margin, col: margin };
-    }
-    if (options.position === "top_right") {
-      return { row: margin, col: width - windowWidth - margin };
-    }
-    if (options.position === "bottom_left") {
-      return { row: height - windowHeight - margin, col: margin };
-    }
-    if (options.position === "bottom_right") {
-      return {
-        row: height - windowHeight - margin,
-        col: width - windowWidth - margin,
-      };
-    }
-
-    // Default: center
-    return {
-      row: Math.floor((height - windowHeight) / 2),
-      col: Math.floor((width - windowWidth) / 2),
-    };
   };
 
   let vimPopupWinid: number | null = null;
@@ -189,6 +189,7 @@ export const main: Entrypoint = (denops) => {
             lastToastHeight,
             screenWidth,
             screenHeight,
+            options.position,
           );
           await denops.call("popup_move", vimPopupWinid, {
             line: row,
@@ -354,8 +355,6 @@ export const main: Entrypoint = (denops) => {
     if (screenWidth === 0 || screenHeight === 0) {
       await updateDimensions();
     }
-    const width = screenWidth;
-    const height = screenHeight;
 
     lastToastWidth = windowWidth;
     lastToastHeight = windowHeight;
@@ -363,8 +362,9 @@ export const main: Entrypoint = (denops) => {
     const { row, col } = calculatePosition(
       windowWidth,
       windowHeight,
-      width,
-      height,
+      screenWidth,
+      screenHeight,
+      options.position,
     );
 
     if (denops.meta.host === "vim") {
