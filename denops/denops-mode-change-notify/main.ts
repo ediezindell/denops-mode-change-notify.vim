@@ -497,8 +497,11 @@ export const main: Entrypoint = (denops) => {
     async modeChanged(amatch: unknown): Promise<void> {
       assert(amatch, is.String);
 
-      const rawModeKey = amatch.includes(":")
-        ? amatch.split(":").pop()!
+      // Performance: Replace includes/split/pop with faster string operations
+      // This avoids creating intermediate arrays and reduces function call overhead
+      const colonIndex = amatch.lastIndexOf(":");
+      const rawModeKey = colonIndex !== -1 
+        ? amatch.slice(colonIndex + 1)
         : amatch;
       const modeKey = normalizeModeKey(rawModeKey);
       if (!modeKey) return;
