@@ -101,10 +101,10 @@ export const main: Entrypoint = (denops) => {
     { content: string[]; width: number; height: number; bufnr?: number }
   >();
 
+  // Performance: No separate RPC call needed - ambiwidth is now batched
+  // with screen dimensions in updateDimensions() for efficiency
   const updateAmbiwidth = async () => {
-    const val = await denops.eval("&ambiwidth");
-    assert(val, is.String);
-    currentAmbiwidth = val;
+    // No-op - handled by updateDimensions()
   };
 
   const calculatePosition = (
@@ -166,18 +166,22 @@ export const main: Entrypoint = (denops) => {
           screenHeight = uis[0].height;
         }
       } catch (_) {
-        const result = await denops.eval("[&columns, &lines]");
-        assert(result, is.ArrayOf(is.Number));
-        const [cols, lines] = result;
-        screenWidth = cols;
-        screenHeight = lines;
+        // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+        const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+        assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+        const [cols, lines, ambi] = result;
+        screenWidth = cols as number;
+        screenHeight = lines as number;
+        currentAmbiwidth = ambi as string;
       }
     } else {
-      const result = await denops.eval("[&columns, &lines]");
-      assert(result, is.ArrayOf(is.Number));
-      const [cols, lines] = result;
-      screenWidth = cols;
-      screenHeight = lines;
+      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+      const [cols, lines, ambi] = result;
+      screenWidth = cols as number;
+      screenHeight = lines as number;
+      currentAmbiwidth = ambi as string;
 
       // Performance: Avoid redundant `popup_getpos` RPC call. `lastToastWidth`
       // is a reliable cache of the window's last known width, so we can skip
@@ -205,7 +209,6 @@ export const main: Entrypoint = (denops) => {
     await Promise.all([
       loadOptions(),
       updateDimensions(),
-      updateAmbiwidth(),
       ensureVimPopup(),
     ]);
 
