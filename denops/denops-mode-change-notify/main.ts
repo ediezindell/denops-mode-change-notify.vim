@@ -64,6 +64,13 @@ const getVimBorderChars = (style: string): string[] | undefined => {
   return VIM_BORDER_CHARS[style];
 };
 
+const getEffectiveStyle = (style: Style, ambiwidth: string): Style => {
+  if (ambiwidth === "double" && style === "ascii_filled") {
+    return "ascii_outline";
+  }
+  return style;
+};
+
 type ToastContent = {
   content: string[];
   width: number;
@@ -185,6 +192,9 @@ export const main: Entrypoint = (denops) => {
   };
 
   const updateDimensions = async () => {
+    let cols: number | undefined;
+    let lines: number | undefined;
+
     if (denops.meta.host === "nvim") {
       try {
         const uis = await denops.call("luaeval", "vim.api.nvim_list_uis()");
@@ -198,42 +208,41 @@ export const main: Entrypoint = (denops) => {
           ),
         );
         if (uis.length > 0) {
-          screenWidth = uis[0].width;
-          screenHeight = uis[0].height;
+          cols = uis[0].width;
+          lines = uis[0].height;
         }
       } catch (_) {
-        const result = await denops.eval("[&columns, &lines]");
-        assert(result, is.ArrayOf(is.Number));
-        const [cols, lines] = result;
-        screenWidth = cols;
-        screenHeight = lines;
+        // Fallback to &columns/&lines
       }
-    } else {
+    }
+
+    if (cols === undefined || lines === undefined) {
       const result = await denops.eval("[&columns, &lines]");
       assert(result, is.ArrayOf(is.Number));
-      const [cols, lines] = result;
-      screenWidth = cols;
-      screenHeight = lines;
+      [cols, lines] = result;
+    }
 
-      // Performance: Avoid redundant `popup_getpos` RPC call. `lastToastWidth`
-      // is a reliable cache of the window's last known width, so we can skip
-      // the async query and directly calculate the new position.
-      if (vimPopupWinid && lastToastWidth > 0) {
-        try {
-          const { row, col } = calculatePosition(
-            lastToastWidth,
-            lastToastHeight,
-            screenWidth,
-            screenHeight,
-            options.position,
-          );
-          await denops.call("popup_move", vimPopupWinid, {
-            line: row,
-            col: col,
-          });
-        } catch (_) {
-          // ignore: window may have been closed
-        }
+    screenWidth = cols;
+    screenHeight = lines;
+
+    // Performance: Avoid redundant `popup_getpos` RPC call. `lastToastWidth`
+    // is a reliable cache of the window's last known width, so we can skip
+    // the async query and directly calculate the new position.
+    if (denops.meta.host === "vim" && vimPopupWinid && lastToastWidth > 0) {
+      try {
+        const { row, col } = calculatePosition(
+          lastToastWidth,
+          lastToastHeight,
+          screenWidth,
+          screenHeight,
+          options.position,
+        );
+        await denops.call("popup_move", vimPopupWinid, {
+          line: row,
+          col: col,
+        });
+      } catch (_) {
+        // ignore: window may have been closed
       }
     }
   };
@@ -345,11 +354,7 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    const ambiwidth = currentAmbiwidth;
-    let style = options.style;
-    if (ambiwidth === "double" && style === "ascii_filled") {
-      style = "ascii_outline";
-    }
+    const style = getEffectiveStyle(options.style, currentAmbiwidth);
 
     const cacheKey = `${style}:${modeCategory}`;
     let cached = toastCache.get(cacheKey);
