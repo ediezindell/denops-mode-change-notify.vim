@@ -1,7 +1,6 @@
 import type { Denops, Entrypoint } from "jsr:@denops/std";
 import * as autocmd from "jsr:@denops/std/autocmd";
 import * as batch from "jsr:@denops/std/batch";
-import * as nvim from "jsr:@denops/std/function/nvim";
 import * as vars from "jsr:@denops/std/variable";
 
 import { assert, is } from "jsr:@core/unknownutil";
@@ -152,7 +151,7 @@ export const main: Entrypoint = (denops) => {
   const updateDimensions = async () => {
     if (denops.meta.host === "nvim") {
       try {
-        const uis = await nvim.nvim_list_uis(denops);
+        const uis = await denops.call("luaeval", "vim.api.nvim_list_uis()");
         assert(
           uis,
           is.ArrayOf(
@@ -211,10 +210,17 @@ export const main: Entrypoint = (denops) => {
     ]);
 
     if (denops.meta.host === "nvim") {
-      await nvim.nvim_exec_lua(
-        denops,
-        `
+      await denops.cmd(
+        `lua << EOF
         _G.DenopsModeChangeNotify = _G.DenopsModeChangeNotify or {}
+        _G.DenopsModeChangeNotify.create_buffer = function()
+          local bufnr = vim.api.nvim_create_buf(false, true)
+          vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
+          return bufnr
+        end
+        _G.DenopsModeChangeNotify.close_window = function(winid)
+          pcall(vim.api.nvim_win_close, winid, true)
+        end
         _G.DenopsModeChangeNotify.update_window = function(bufnr, update_content, content, width, height, row, col, border, highlight, last_winid)
           if update_content then
             vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
@@ -256,8 +262,7 @@ export const main: Entrypoint = (denops) => {
           vim.api.nvim_win_set_option(win, "winhighlight", "Normal:" .. highlight)
           return win
         end
-      `,
-        [],
+EOF`,
       );
     }
 
@@ -411,8 +416,10 @@ export const main: Entrypoint = (denops) => {
 
       // Create buffer if missing
       if (!bufnr) {
-        bufnr = await nvim.nvim_create_buf(denops, false, true);
-        await nvim.nvim_buf_set_option(denops, bufnr, "bufhidden", "hide");
+        bufnr = await denops.call(
+          "luaeval",
+          "_G.DenopsModeChangeNotify.create_buffer()",
+        ) as number;
         cached.bufnr = bufnr;
         shouldUpdateContent = true;
       }
@@ -423,9 +430,9 @@ export const main: Entrypoint = (denops) => {
         buf: number,
         update: boolean,
       ): Promise<unknown> => {
-        return await nvim.nvim_exec_lua(
-          denops,
-          `return _G.DenopsModeChangeNotify.update_window(...)`,
+        return await denops.call(
+          "luaeval",
+          `_G.DenopsModeChangeNotify.update_window(unpack(_A))`,
           [
             buf,
             update,
@@ -445,8 +452,10 @@ export const main: Entrypoint = (denops) => {
         win = await updateWindow(bufnr, shouldUpdateContent);
       } catch (_) {
         // Fallback: Buffer might be invalid. Create new one.
-        bufnr = await nvim.nvim_create_buf(denops, false, true);
-        await nvim.nvim_buf_set_option(denops, bufnr, "bufhidden", "hide");
+        bufnr = await denops.call(
+          "luaeval",
+          "_G.DenopsModeChangeNotify.create_buffer()",
+        ) as number;
         cached.bufnr = bufnr;
         win = await updateWindow(bufnr, true);
       }
@@ -455,7 +464,11 @@ export const main: Entrypoint = (denops) => {
       lastNvimWinid = win as number;
       timerId = setTimeout(async () => {
         try {
-          await nvim.nvim_win_close(denops, win as number, true);
+          await denops.call(
+            "luaeval",
+            "_G.DenopsModeChangeNotify.close_window(_A)",
+            win as number,
+          );
         } catch (_) {
           // ignore
         }
