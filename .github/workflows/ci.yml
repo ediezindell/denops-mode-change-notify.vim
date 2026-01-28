@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deno-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Deno
+      uses: denoland/setup-deno@v2
+      with:
+        deno-version: stable
+        
+    - name: Check Deno types
+      run: deno check denops/denops-mode-change-notify/*.ts
+      
+    - name: Deno info (optional debug)
+      run: deno info denops/denops-mode-change-notify/main.ts
