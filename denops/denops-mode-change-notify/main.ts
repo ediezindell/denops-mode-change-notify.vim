@@ -159,6 +159,10 @@ export const main: Entrypoint = (denops) => {
     highlight: "Normal",
   };
   let options: Options = { ...defaultOptions };
+  
+  // Performance: Cache enabled modes as Set for O(1) lookup in hot path
+  // This eliminates O(n) array search on every mode change
+  let enabledModesSet: Set<ModeCategory>;
 
   const loadOptions = async (): Promise<void> => {
     const userOptions = await vars.g.get(
@@ -172,6 +176,9 @@ export const main: Entrypoint = (denops) => {
       ...defaultOptions,
       ...userOptions,
     };
+    
+    // Performance: Update Set when options change
+    enabledModesSet = new Set(options.enabled_modes);
   };
 
   // Cache screen dimensions to avoid RPC calls on every mode change
@@ -441,22 +448,24 @@ export const main: Entrypoint = (denops) => {
         ...(borderChars ? { borderchars: borderChars } : {}),
       };
 
-      // Batch operations
-      try {
-        await batch.collect(denops, (helper) => {
+      // Performance: Extract batch operations to avoid code duplication
+      // This reduces bundle size and improves maintainability
+      const updateVimPopup = async () => {
+        return await batch.collect(denops, (helper) => {
           helper.call("popup_settext", vimPopupWinid, content);
           helper.call("popup_setoptions", vimPopupWinid, popupOptions);
           return []; // Return empty array to satisfy batch.collect return type
         });
+      };
+
+      // Batch operations with fallback
+      try {
+        await updateVimPopup();
       } catch (_) {
         // Fallback: window might be closed/invalid. Recreate and retry.
         vimPopupWinid = null;
         await ensureVimPopup();
-        await batch.collect(denops, (helper) => {
-          helper.call("popup_settext", vimPopupWinid, content);
-          helper.call("popup_setoptions", vimPopupWinid, popupOptions);
-          return []; // Return empty array to satisfy batch.collect return type
-        });
+        await updateVimPopup();
       }
 
       timerId = setTimeout(async () => {
@@ -547,7 +556,10 @@ export const main: Entrypoint = (denops) => {
         : amatch;
       const modeKey = normalizeModeKey(rawModeKey);
       if (!modeKey) return;
-      if (!options.enabled_modes.includes(modeKey)) return;
+      
+      // Performance: Use Set.has() for O(1) lookup instead of O(n) array.includes()
+      // This eliminates linear search on every mode change (hot path optimization)
+      if (!enabledModesSet.has(modeKey)) return;
       await showToast(denops, modeKey);
     },
 

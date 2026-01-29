@@ -33,3 +33,11 @@
 ## 2026-01-29 - Redundant String Comparison Elimination
 **Learning:** Repeated string equality checks in the same scope create unnecessary overhead. Cache comparison results and use string concatenation instead of template literals for cache keys.
 **Action:** Store boolean results of string comparisons in variables and reuse them. Use `+` concatenation for simple cache keys instead of template literals.
+
+## 2026-01-29 - Hot Path Array.includes() Optimization
+**Learning:** Array.includes() performs O(n) linear search which is expensive in hot paths like ModeChanged events. Converting to Set provides O(1) lookup time.
+**Action:** Cache frequently searched arrays as Sets during configuration load and use Set.has() instead of Array.includes() in hot paths.
+
+## 2026-01-29 - Code Duplication in Batch Operations
+**Learning:** Identical batch.collect() operations in try/catch blocks create code duplication and increase bundle size unnecessarily.
+**Action:** Extract repeated batch operations into reusable functions to improve maintainability and reduce code duplication.
