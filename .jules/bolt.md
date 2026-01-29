@@ -41,3 +41,7 @@
 ## 2026-01-29 - Code Duplication in Batch Operations
 **Learning:** Identical batch.collect() operations in try/catch blocks create code duplication and increase bundle size unnecessarily.
 **Action:** Extract repeated batch operations into reusable functions to improve maintainability and reduce code duplication.
+
+## 2026-01-29 - Static Value Computation Elimination
+**Learning:** Computing static values during module initialization using expensive operations like Math.max(...array.map()) adds unnecessary load time overhead.
+**Action:** Pre-calculate and hard-code static values to eliminate runtime computations during plugin initialization.
