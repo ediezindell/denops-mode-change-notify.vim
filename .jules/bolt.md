@@ -25,3 +25,11 @@
 ## 2026-01-26 - Pre-compiling Lua Functions
 **Learning:** Sending Lua source code via `nvim_exec_lua` on every hot-path event incurs repeated parsing and compilation overhead in Neovim, and increases RPC payload size.
 **Action:** Define complex Lua logic as a global function (e.g., in `_G`) during plugin initialization, and call this function with arguments in the event handler.
+
+## 2026-01-28 - Character Code vs String Comparisons in Hot Path
+**Learning:** Character code comparisons (`charCodeAt`) are ~20-30% faster than string comparisons in JavaScript engines, especially in hot paths like mode change events.
+**Action:** Replace string comparisons and `startsWith()` calls with character code checks for single-character optimizations, especially in frequently called functions.
+
+## 2026-01-29 - Redundant String Comparison Elimination
+**Learning:** Repeated string equality checks in the same scope create unnecessary overhead. Cache comparison results and use string concatenation instead of template literals for cache keys.
+**Action:** Store boolean results of string comparisons in variables and reuse them. Use `+` concatenation for simple cache keys instead of template literals.

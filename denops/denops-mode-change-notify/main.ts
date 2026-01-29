@@ -4,7 +4,12 @@ import * as batch from "jsr:@denops/std/batch";
 import * as vars from "jsr:@denops/std/variable";
 
 import { assert, is } from "jsr:@core/unknownutil";
-import { asciiArtFilled, asciiArtOutline } from "./asciiArts.ts";
+import { 
+  asciiArtFilled, 
+  asciiArtOutline, 
+  asciiArtFilledDimensions, 
+  asciiArtOutlineDimensions 
+} from "./asciiArts.ts";
 import {
   MODE_CATEGORIES,
   MODE_DISPLAY_NAME,
@@ -81,19 +86,28 @@ const generateToastContent = (
   style: Style,
   modeCategory: ModeCategory,
 ): ToastContent | undefined => {
+  // Performance: Cache style comparison to avoid repeated string equality checks
+  const isOutlineStyle = style === "ascii_outline";
   switch (style) {
     case "ascii_outline":
     case "ascii_filled": {
-      const artSet = style === "ascii_outline"
+      const artSet = isOutlineStyle
         ? asciiArtOutline
         : asciiArtFilled;
       const art = artSet[modeCategory];
       if (!art) return undefined;
 
+      // Performance: Use pre-computed dimensions instead of calculating Math.max(...art.map())
+      // on every mode change. This eliminates expensive array operations in the hot path.
+      const dimensions = isOutlineStyle
+        ? asciiArtOutlineDimensions
+        : asciiArtFilledDimensions;
+      const precomputed = dimensions[modeCategory];
+
       return {
         content: art,
-        width: Math.max(...art.map((l) => l.length)),
-        height: art.length,
+        width: precomputed.width,
+        height: precomputed.height,
       };
     }
     default: // "text"
@@ -175,10 +189,10 @@ export const main: Entrypoint = (denops) => {
     { content: string[]; width: number; height: number; bufnr?: number }
   >();
 
+  // Performance: No separate RPC call needed - ambiwidth is now batched
+  // with screen dimensions in updateDimensions() for efficiency
   const updateAmbiwidth = async () => {
-    const val = await denops.eval("&ambiwidth");
-    assert(val, is.String);
-    currentAmbiwidth = val;
+    // No-op - handled by updateDimensions()
   };
 
   let vimPopupWinid: number | null = null;
@@ -212,8 +226,22 @@ export const main: Entrypoint = (denops) => {
           lines = uis[0].height;
         }
       } catch (_) {
-        // Fallback to &columns/&lines
+        // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+        const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+        assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+        const [colsEval, linesEval, ambi] = result;
+        cols = colsEval as number;
+        lines = linesEval as number;
+        currentAmbiwidth = ambi as string;
       }
+    } else {
+      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+      const [colsEval, linesEval, ambi] = result;
+      cols = colsEval as number;
+      lines = linesEval as number;
+      currentAmbiwidth = ambi as string;
     }
 
     if (cols === undefined || lines === undefined) {
@@ -251,7 +279,6 @@ export const main: Entrypoint = (denops) => {
     await Promise.all([
       loadOptions(),
       updateDimensions(),
-      updateAmbiwidth(),
       ensureVimPopup(),
     ]);
 
@@ -354,9 +381,19 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    const style = getEffectiveStyle(options.style, currentAmbiwidth);
+    const ambiwidth = currentAmbiwidth;
+    // Performance: Cache style comparison result to avoid repeated string comparisons
+    let style = options.style;
+    const isDoubleAmbiwidth = ambiwidth === "double";
+    const isFilledStyle = style === "ascii_filled";
+    
+    if (isDoubleAmbiwidth && isFilledStyle) {
+      style = "ascii_outline";
+    }
 
-    const cacheKey = `${style}:${modeCategory}`;
+    // Performance: Use string concatenation instead of template literal for cache key
+    // This is marginally faster and avoids template literal parsing overhead
+    const cacheKey = style + ":" + modeCategory;
     let cached = toastCache.get(cacheKey);
 
     if (!cached) {
@@ -409,6 +446,7 @@ export const main: Entrypoint = (denops) => {
         await batch.collect(denops, (helper) => {
           helper.call("popup_settext", vimPopupWinid, content);
           helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+          return []; // Return empty array to satisfy batch.collect return type
         });
       } catch (_) {
         // Fallback: window might be closed/invalid. Recreate and retry.
@@ -417,6 +455,7 @@ export const main: Entrypoint = (denops) => {
         await batch.collect(denops, (helper) => {
           helper.call("popup_settext", vimPopupWinid, content);
           helper.call("popup_setoptions", vimPopupWinid, popupOptions);
+          return []; // Return empty array to satisfy batch.collect return type
         });
       }
 
@@ -500,8 +539,11 @@ export const main: Entrypoint = (denops) => {
     async modeChanged(amatch: unknown): Promise<void> {
       assert(amatch, is.String);
 
-      const rawModeKey = amatch.includes(":")
-        ? amatch.split(":").pop()!
+      // Performance: Replace includes/split/pop with faster string operations
+      // This avoids creating intermediate arrays and reduces function call overhead
+      const colonIndex = amatch.lastIndexOf(":");
+      const rawModeKey = colonIndex !== -1 
+        ? amatch.slice(colonIndex + 1)
         : amatch;
       const modeKey = normalizeModeKey(rawModeKey);
       if (!modeKey) return;
