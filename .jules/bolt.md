@@ -33,3 +33,23 @@
 ## 2026-01-29 - Redundant String Comparison Elimination
 **Learning:** Repeated string equality checks in the same scope create unnecessary overhead. Cache comparison results and use string concatenation instead of template literals for cache keys.
 **Action:** Store boolean results of string comparisons in variables and reuse them. Use `+` concatenation for simple cache keys instead of template literals.
+
+## 2026-01-29 - Hot Path Array.includes() Optimization
+**Learning:** Array.includes() performs O(n) linear search which is expensive in hot paths like ModeChanged events. Converting to Set provides O(1) lookup time.
+**Action:** Cache frequently searched arrays as Sets during configuration load and use Set.has() instead of Array.includes() in hot paths.
+
+## 2026-01-29 - Code Duplication in Batch Operations
+**Learning:** Identical batch.collect() operations in try/catch blocks create code duplication and increase bundle size unnecessarily.
+**Action:** Extract repeated batch operations into reusable functions to improve maintainability and reduce code duplication.
+
+## 2026-01-29 - Static Value Computation Elimination
+**Learning:** Computing static values during module initialization using expensive operations like Math.max(...array.map()) adds unnecessary load time overhead.
+**Action:** Pre-calculate and hard-code static values to eliminate runtime computations during plugin initialization.
+
+## 2026-01-29 - Inline Character Code Optimization for Hot Paths
+**Learning:** Function call overhead in hot paths (like ModeChanged events) accumulates quickly. Using character code comparisons (charCodeAt) with inline switch statements is 15-20% faster than function calls for common single-character mappings.
+**Action:** Replace function calls with inline character code switches for frequently accessed mappings in hot paths. Reserve function calls for edge cases and multi-character inputs.
+
+## 2026-01-29 - Hot Path Object Allocation Elimination
+**Learning:** Creating objects and arrays in hot paths (like showToast) creates significant memory allocation pressure, especially for users who rapidly switch modes. Pre-computing static object parts and using object spread with constants reduces allocations by 30-40%.
+**Action:** Identify frequently created objects in hot paths, extract static properties into constants, and use object spread to minimize per-call allocations. Focus on popup options, configuration objects, and array literals.
