@@ -15,7 +15,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: stable
+          deno-version: lts
           cache: true
 
       - name: Check Deno types
