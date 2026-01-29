@@ -263,6 +263,15 @@ export const main: Entrypoint = (denops) => {
       lines = linesEval as number;
       currentAmbiwidth = ambi as string;
     }
+    } else {
+      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+      const [colsEval, linesEval, ambi] = result;
+      cols = colsEval as number;
+      lines = linesEval as number;
+      currentAmbiwidth = ambi as string;
+    }
 
     if (cols === undefined || lines === undefined) {
       const result = await denops.eval("[&columns, &lines]");
