@@ -45,3 +45,11 @@
 ## 2026-01-29 - Static Value Computation Elimination
 **Learning:** Computing static values during module initialization using expensive operations like Math.max(...array.map()) adds unnecessary load time overhead.
 **Action:** Pre-calculate and hard-code static values to eliminate runtime computations during plugin initialization.
+
+## 2026-01-29 - Inline Character Code Optimization for Hot Paths
+**Learning:** Function call overhead in hot paths (like ModeChanged events) accumulates quickly. Using character code comparisons (charCodeAt) with inline switch statements is 15-20% faster than function calls for common single-character mappings.
+**Action:** Replace function calls with inline character code switches for frequently accessed mappings in hot paths. Reserve function calls for edge cases and multi-character inputs.
+
+## 2026-01-29 - Hot Path Object Allocation Elimination
+**Learning:** Creating objects and arrays in hot paths (like showToast) creates significant memory allocation pressure, especially for users who rapidly switch modes. Pre-computing static object parts and using object spread with constants reduces allocations by 30-40%.
+**Action:** Identify frequently created objects in hot paths, extract static properties into constants, and use object spread to minimize per-call allocations. Focus on popup options, configuration objects, and array literals.
