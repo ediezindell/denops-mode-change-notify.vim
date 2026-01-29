@@ -264,23 +264,6 @@ export const main: Entrypoint = (denops) => {
       currentAmbiwidth = ambi as string;
     }
     } else {
-<<<<<<< HEAD
-      // Optimization: Batch multiple option retrievals into a single RPC call
-      const result = await denops.eval("[&columns, &lines]");
-      assert(result, is.ArrayOf(is.Number));
-      const [cols, lines] = result;
-      screenWidth = cols;
-      screenHeight = lines;
-||||||| 70db585
-      const [cols, lines] = await Promise.all([
-        denops.eval("&columns"),
-        denops.eval("&lines"),
-      ]);
-      assert(cols, is.Number);
-      assert(lines, is.Number);
-      screenWidth = cols;
-      screenHeight = lines;
-=======
       // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
       const result = await denops.eval("[&columns, &lines, &ambiwidth]");
       assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
