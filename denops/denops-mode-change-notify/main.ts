@@ -232,42 +232,26 @@ export const main: Entrypoint = (denops) => {
     if (denops.meta.host === "nvim") {
       try {
         const uis = await denops.call("luaeval", "vim.api.nvim_list_uis()");
-        assert(
-          uis,
-          is.ArrayOf(
-            is.ObjectOf({
-              width: is.Number,
-              height: is.Number,
-            }),
-          ),
-        );
+        assert(uis, is.ArrayOf(is.ObjectOf({ width: is.Number, height: is.Number })));
         if (uis.length > 0) {
           cols = uis[0].width;
           lines = uis[0].height;
         }
       } catch (_) {
-        // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
-        const result = await denops.eval("[&columns, &lines, &ambiwidth]");
-        assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
-        const [colsEval, linesEval, ambi] = result;
-        cols = colsEval as number;
-        lines = linesEval as number;
-        currentAmbiwidth = ambi as string;
+        // ignore: fallback handled below
       }
-    } else {
-      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
-      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
-      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
-      const [colsEval, linesEval, ambi] = result;
-      cols = colsEval as number;
-      lines = linesEval as number;
-      currentAmbiwidth = ambi as string;
     }
 
     if (cols === undefined || lines === undefined) {
-      const result = await denops.eval("[&columns, &lines]");
-      assert(result, is.ArrayOf(is.Number));
-      [cols, lines] = result;
+      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls.
+      // We consolidate fallback for both Neovim failures and Vim host here.
+      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+      const [colsEval, linesEval, ambi] = result;
+
+      cols = colsEval as number;
+      lines = linesEval as number;
+      currentAmbiwidth = ambi as string;
     }
 
     screenWidth = cols;
