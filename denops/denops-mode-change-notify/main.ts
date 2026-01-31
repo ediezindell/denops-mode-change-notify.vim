@@ -385,15 +385,7 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    const ambiwidth = currentAmbiwidth;
-    // Performance: Cache style comparison result to avoid repeated string comparisons
-    let style = options.style;
-    const isDoubleAmbiwidth = ambiwidth === "double";
-    const isFilledStyle = style === "ascii_filled";
-
-    if (isDoubleAmbiwidth && isFilledStyle) {
-      style = "ascii_outline";
-    }
+    const style = getEffectiveStyle(options.style, currentAmbiwidth);
 
     // Performance: Use string concatenation instead of template literal for cache key
     // This is marginally faster and avoids template literal parsing overhead
