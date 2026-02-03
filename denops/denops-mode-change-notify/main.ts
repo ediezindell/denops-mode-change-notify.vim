@@ -89,15 +89,16 @@ type ToastContent = {
   height: number;
 };
 
+type CachedToast = ToastContent & { bufnr?: number };
+
 const generateToastContent = (
   style: Style,
   modeCategory: ModeCategory,
 ): ToastContent | undefined => {
-  // Performance: Cache style comparison to avoid repeated string equality checks
-  const isOutlineStyle = style === "ascii_outline";
   switch (style) {
     case "ascii_outline":
     case "ascii_filled": {
+      const isOutlineStyle = style === "ascii_outline";
       const artSet = isOutlineStyle ? asciiArtOutline : asciiArtFilled;
       const art = artSet[modeCategory];
       if (!art) return undefined;
@@ -115,12 +116,14 @@ const generateToastContent = (
         height: precomputed.height,
       };
     }
-    default: // "text"
+    case "text":
       return {
         content: ["", ` ${MODE_DISPLAY_NAME[modeCategory]} `, ""],
         width: MODE_DISPLAY_NAME[modeCategory].length + 2,
         height: 3,
       };
+    default:
+      return undefined;
   }
 };
 
@@ -146,7 +149,6 @@ const calculatePosition = (
         col: screenWidth - toastWidth - margin,
       };
     case "center":
-    default:
       return {
         row: Math.floor((screenHeight - toastHeight) / 2),
         col: Math.floor((screenWidth - toastWidth) / 2),
@@ -196,10 +198,7 @@ export const main: Entrypoint = (denops) => {
   let lastToastHeight = 0;
 
   // Cache ASCII art dimensions to avoid recalculating on every mode change
-  const toastCache = new Map<
-    string,
-    { content: string[]; width: number; height: number; bufnr?: number }
-  >();
+  const toastCache = new Map<string, CachedToast>();
 
   // Performance: Pre-compute popupOptions base object to eliminate repeated object creation
   // This reduces memory allocations in the showToast hot path by ~30-40%
@@ -207,12 +206,6 @@ export const main: Entrypoint = (denops) => {
     zindex: 9999,
     focusable: false,
     hidden: false,
-  };
-
-  // Performance: No separate RPC call needed - ambiwidth is now batched
-  // with screen dimensions in updateDimensions() for efficiency
-  const updateAmbiwidth = async () => {
-    // No-op - handled by updateDimensions()
   };
 
   let vimPopupWinid: number | null = null;
