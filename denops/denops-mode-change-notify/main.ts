@@ -89,7 +89,11 @@ type ToastContent = {
   height: number;
 };
 
-type CachedToast = ToastContent & { bufnr?: number };
+type CachedToast = ToastContent & {
+  bufnr?: number;
+  row?: number;
+  col?: number;
+};
 
 const generateToastContent = (
   style: Style,
@@ -171,6 +175,12 @@ export const main: Entrypoint = (denops) => {
   // This eliminates O(n) array search on every mode change
   let enabledModesSet: Set<ModeCategory>;
 
+  // Performance: Pre-calculate effective style and Vim options to avoid redundant work in hot path
+  let effectiveStyle: Style = defaultOptions.style;
+  let borderPropCache: readonly number[] = BORDER_PROPS.none;
+  let borderHighlightCache: string[] = [];
+  let borderCharsCache: string[] | undefined;
+
   const loadOptions = async (): Promise<void> => {
     const userOptions = await vars.g.get(
       denops,
@@ -186,6 +196,32 @@ export const main: Entrypoint = (denops) => {
 
     // Performance: Update Set when options change
     enabledModesSet = new Set(options.enabled_modes);
+
+    // Performance: Pre-calculate derived state to minimize work in hot path
+    updateEffectiveStyle();
+    borderPropCache = options.border !== "none" ? BORDER_PROPS.default : BORDER_PROPS.none;
+    borderHighlightCache = [options.highlight];
+    borderCharsCache = getVimBorderChars(options.border);
+    refreshCachedPositions();
+  };
+
+  const updateEffectiveStyle = () => {
+    effectiveStyle = getEffectiveStyle(options.style, currentAmbiwidth);
+  };
+
+  const refreshCachedPositions = () => {
+    if (screenWidth === 0 || screenHeight === 0) return;
+    for (const cached of toastCache.values()) {
+      const { row, col } = calculatePosition(
+        cached.width,
+        cached.height,
+        screenWidth,
+        screenHeight,
+        options.position,
+      );
+      cached.row = row;
+      cached.col = col;
+    }
   };
 
   // Cache screen dimensions to avoid RPC calls on every mode change
@@ -249,6 +285,10 @@ export const main: Entrypoint = (denops) => {
 
     screenWidth = cols;
     screenHeight = lines;
+
+    // Performance: Refresh cached positions and effective style when dimensions change
+    updateEffectiveStyle();
+    refreshCachedPositions();
 
     // Performance: Avoid redundant `popup_getpos` RPC call. `lastToastWidth`
     // is a reliable cache of the window's last known width, so we can skip
@@ -378,17 +418,29 @@ export const main: Entrypoint = (denops) => {
     let windowWidth: number;
     let windowHeight: number;
 
-    const style = getEffectiveStyle(options.style, currentAmbiwidth);
+    // Performance: Use pre-calculated effectiveStyle to avoid redundant work
+    const style = effectiveStyle;
 
-    // Performance: Use string concatenation instead of template literal for cache key
-    // This is marginally faster and avoids template literal parsing overhead
     const cacheKey = style + ":" + modeCategory;
     let cached = toastCache.get(cacheKey);
+
+    if (screenWidth === 0 || screenHeight === 0) {
+      await updateDimensions();
+    }
 
     if (!cached) {
       const generated = generateToastContent(style, modeCategory);
       if (!generated) return;
-      cached = { ...generated };
+
+      // Performance: Calculate position once and store in cache
+      const { row, col } = calculatePosition(
+        generated.width,
+        generated.height,
+        screenWidth,
+        screenHeight,
+        options.position,
+      );
+      cached = { ...generated, row, col };
       toastCache.set(cacheKey, cached);
     }
 
@@ -396,39 +448,25 @@ export const main: Entrypoint = (denops) => {
     windowWidth = cached.width;
     windowHeight = cached.height;
 
-    if (screenWidth === 0 || screenHeight === 0) {
-      await updateDimensions();
-    }
-
     lastToastWidth = windowWidth;
     lastToastHeight = windowHeight;
 
-    const { row, col } = calculatePosition(
-      windowWidth,
-      windowHeight,
-      screenWidth,
-      screenHeight,
-      options.position,
-    );
+    // Performance: Use pre-calculated position from cache
+    const row = cached.row ?? 0;
+    const col = cached.col ?? 0;
 
     if (denops.meta.host === "vim") {
       await ensureVimPopup();
 
-      // Performance: Use pre-computed border_prop to avoid array creation in hot path
-      const border_prop = options.border !== "none"
-        ? BORDER_PROPS.default
-        : BORDER_PROPS.none;
-      const borderChars = getVimBorderChars(options.border);
-
-      // Performance: Use object spread with pre-computed base to minimize object allocation
+      // Performance: Use pre-calculated UI options to avoid allocations and redundant work
       const popupOptions = {
         ...basePopupOptions,
         line: row,
         col,
-        border: border_prop,
+        border: borderPropCache,
         highlight: options.highlight,
-        borderhighlight: [options.highlight],
-        ...(borderChars ? { borderchars: borderChars } : {}),
+        borderhighlight: borderHighlightCache,
+        ...(borderCharsCache ? { borderchars: borderCharsCache } : {}),
       };
 
       // Performance: Extract batch operations to avoid code duplication
