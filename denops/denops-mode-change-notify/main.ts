@@ -395,6 +395,27 @@ export const main: Entrypoint = (denops) => {
         `call denops#notify('${denops.name}', 'cleanup', [])`,
       );
     });
+
+    // Define <Plug> mappings for manual triggering and testing
+    // These allow forcing a notification for a specific mode category,
+    // which is useful for snapshot testing or manual verification.
+    await batch.collect(denops, (helper) => {
+      for (const mode of MODE_CATEGORIES) {
+        const cmd =
+          `<Cmd>call denops#notify('${denops.name}', 'show', ['${mode}'])<CR>`;
+        helper.cmd(`noremap <silent> <Plug>(mode-change-notify-${mode}) ${cmd}`);
+        helper.cmd(
+          `inoremap <silent> <Plug>(mode-change-notify-${mode}) ${cmd}`,
+        );
+        helper.cmd(
+          `cnoremap <silent> <Plug>(mode-change-notify-${mode}) ${cmd}`,
+        );
+        helper.cmd(
+          `tnoremap <silent> <Plug>(mode-change-notify-${mode}) ${cmd}`,
+        );
+      }
+      return [];
+    });
   };
 
   setupAutocommands();
@@ -566,6 +587,12 @@ export const main: Entrypoint = (denops) => {
   };
 
   denops.dispatcher = {
+    async show(mode: unknown): Promise<void> {
+      assert(mode, is.LiteralOneOf(MODE_CATEGORIES));
+      if (!enabledModesSet.has(mode)) return;
+      await showToast(denops, mode);
+    },
+
     async modeChanged(amatch: unknown): Promise<void> {
       assert(amatch, is.String);
 

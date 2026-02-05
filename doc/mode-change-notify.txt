@@ -9,6 +9,7 @@ CONTENTS                                       *mode-change-notify-contents*
 4. Configuration                             |mode-change-notify-configuration|
 5. Options (full reference)                  |mode-change-notify-options|
    - Options Dictionary                      |g:mode_change_notify_options|
+6. Mappings                                  |mode-change-notify-mappings|
 
 
 ==============================================================================
@@ -130,5 +131,34 @@ A dictionary containing all settings for this plugin.
                   Recommended groups: 'Normal', 'ModeMsg', 'Pmenu', 'ErrorMsg'.
     Type:         String
     Default:      'Normal'
+
+==============================================================================
+6. Mappings                                  *mode-change-notify-mappings*
+
+The following |<Plug>| mappings are provided for manual notification triggering,
+which is useful for testing or custom integrations. These mappings respect the
+'enabled_modes' setting.
+
+|<Plug>(mode-change-notify-n)|  Trigger Normal mode notification.
+|<Plug>(mode-change-notify-i)|  Trigger Insert mode notification.
+|<Plug>(mode-change-notify-v)|  Trigger Visual mode notification.
+|<Plug>(mode-change-notify-c)|  Trigger Command mode notification.
+|<Plug>(mode-change-notify-t)|  Trigger Terminal mode notification.
+|<Plug>(mode-change-notify-r)|  Trigger Replace mode notification.
+
+Example (Normal mode mapping): >
+    nmap <leader>mn <Plug>(mode-change-notify-n)
+<
+Example (Triggering from script for testing): >
+    " Vimscript
+    execute "normal \<Plug>(mode-change-notify-n)"
+
+    -- Lua (Neovim)
+    vim.api.nvim_feedkeys(
+      vim.api.nvim_replace_termcodes("<Plug>(mode-change-notify-n)", true, true, true),
+      "n",
+      false
+    )
+<
 ==============================================================================
 vim: set ft=help :
