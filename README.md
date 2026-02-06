@@ -65,6 +65,19 @@ vim.g.mode_change_notify_options = {
 
 **Note:** The `ascii_filled` style requires a [Nerd Font](https://www.nerdfonts.com/).
 
+## Mappings
+
+The plugin provides `<Plug>` mappings for manual notification triggering, useful for testing or custom integrations:
+
+- `<Plug>(mode-change-notify-n)`
+- `<Plug>(mode-change-notify-i)`
+- `<Plug>(mode-change-notify-v)`
+- `<Plug>(mode-change-notify-c)`
+- `<Plug>(mode-change-notify-t)`
+- `<Plug>(mode-change-notify-r)`
+
+These mappings respect your `enabled_modes` configuration.
+
 For a full list of all options and their descriptions, please see the help file:
 ```vim
 :help mode-change-notify
