@@ -160,6 +160,42 @@ const calculatePosition = (
   }
 };
 
+/**
+ * Extracts and normalizes the mode category from a ModeChanged amatch string.
+ *
+ * Performance: This function inlines common mode detection and uses fast string
+ * operations to minimize overhead in the critical mode-change hot path.
+ */
+const getModeCategoryFromAmatch = (amatch: string): ModeCategory | null => {
+  // Performance: Use lastIndexOf + slice instead of split() to avoid array allocation
+  const colonIndex = amatch.lastIndexOf(":");
+  const rawModeKey = colonIndex !== -1 ? amatch.slice(colonIndex + 1) : amatch;
+
+  // Performance: Inline character code optimization for the 6 most common modes
+  // eliminates normalizeModeKey() call overhead for the majority of mode changes.
+  // Impact: ~15-20% faster mode change detection for frequent mode switching.
+  if (rawModeKey.length === 1) {
+    const charCode = rawModeKey.charCodeAt(0);
+    switch (charCode) {
+      case 110:
+        return "n"; // Normal
+      case 105:
+        return "i"; // Insert
+      case 118:
+        return "v"; // Visual
+      case 99:
+        return "c"; // Command
+      case 116:
+        return "t"; // Terminal
+      case 82:
+        return "r"; // Replace (uppercase 'R')
+    }
+  }
+
+  // Fallback to normalizeModeKey for rare or multi-character modes
+  return normalizeModeKey(rawModeKey);
+};
+
 export const main: Entrypoint = (denops) => {
   const defaultOptions: Options = {
     enabled_modes: [...MODE_CATEGORIES],
@@ -591,52 +627,13 @@ export const main: Entrypoint = (denops) => {
 
     async modeChanged(amatch: unknown): Promise<void> {
       assert(amatch, is.String);
+      const modeKey = getModeCategoryFromAmatch(amatch);
 
-      // Performance: Replace includes/split/pop with faster string operations
-      // This avoids creating intermediate arrays and reduces function call overhead
-      const colonIndex = amatch.lastIndexOf(":");
-      const rawModeKey = colonIndex !== -1
-        ? amatch.slice(colonIndex + 1)
-        : amatch;
-
-      // Performance: Inline character code optimization for common mode keys
-      // This eliminates normalizeModeKey() function call overhead for the 6 most common modes
-      // Impact: ~15-20% faster mode change detection for frequent mode switching
-      let modeKey: ModeCategory | null = null;
-      if (rawModeKey.length === 1) {
-        const charCode = rawModeKey.charCodeAt(0);
-        switch (charCode) {
-          case 110:
-            modeKey = "n";
-            break; // 'n' - Normal
-          case 105:
-            modeKey = "i";
-            break; // 'i' - Insert
-          case 118:
-            modeKey = "v";
-            break; // 'v' - Visual
-          case 99:
-            modeKey = "c";
-            break; // 'c' - Command
-          case 116:
-            modeKey = "t";
-            break; // 't' - Terminal
-          case 82:
-            modeKey = "r";
-            break; // 'R' - Replace (uppercase)
-        }
+      if (modeKey && enabledModesSet.has(modeKey)) {
+        // Performance: Use Set.has() for O(1) lookup instead of O(n) array.includes()
+        // This eliminates linear search on every mode change (hot path optimization)
+        await showToast(denops, modeKey);
       }
-
-      // Fallback to normalizeModeKey for rare/multi-character modes
-      if (!modeKey) {
-        modeKey = normalizeModeKey(rawModeKey);
-      }
-      if (!modeKey) return;
-
-      // Performance: Use Set.has() for O(1) lookup instead of O(n) array.includes()
-      // This eliminates linear search on every mode change (hot path optimization)
-      if (!enabledModesSet.has(modeKey)) return;
-      await showToast(denops, modeKey);
     },
 
     async updateDimensions(): Promise<void> {
