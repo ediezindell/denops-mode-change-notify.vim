@@ -44,7 +44,7 @@ type Options = {
   border: (typeof borders)[number];
   timeout: number;
   position: Position;
-  highlight: string;
+  highlight: string | Record<ModeCategory, string>;
 };
 
 const isOptions = is.PartialOf(
@@ -54,7 +54,10 @@ const isOptions = is.PartialOf(
     border: is.LiteralOneOf(borders),
     timeout: is.Number,
     position: is.LiteralOneOf(positions),
-    highlight: is.String,
+    highlight: is.UnionOf([
+      is.String,
+      is.RecordOf(is.String, is.LiteralOneOf(MODE_CATEGORIES)),
+    ]),
   }),
 );
 
@@ -70,6 +73,24 @@ const VIM_BORDER_CHARS: Record<string, string[]> = {
 const BORDER_PROPS = {
   none: [0, 0, 0, 0] as const,
   default: [1, 1, 1, 1] as const,
+};
+
+const PLUGIN_HIGHLIGHT_GROUPS: Record<ModeCategory, string> = {
+  n: "DenopsModeNotifyNormal",
+  i: "DenopsModeNotifyInsert",
+  v: "DenopsModeNotifyVisual",
+  c: "DenopsModeNotifyCommand",
+  t: "DenopsModeNotifyTerminal",
+  r: "DenopsModeNotifyReplace",
+};
+
+const DEFAULT_HIGHLIGHT_LINKS: Record<ModeCategory, string> = {
+  n: "ModeMsg",
+  i: "Type",
+  v: "Statement",
+  c: "Constant",
+  t: "Constant",
+  r: "Special",
 };
 
 const getVimBorderChars = (style: string): string[] | undefined => {
@@ -214,7 +235,6 @@ export const main: Entrypoint = (denops) => {
   // Performance: Pre-calculate effective style and Vim options to avoid redundant work in hot path
   let effectiveStyle: Style = defaultOptions.style;
   let borderPropCache: readonly number[] = BORDER_PROPS.none;
-  let borderHighlightCache: string[] = [];
   let borderCharsCache: string[] | undefined;
 
   const loadOptions = async (): Promise<void> => {
@@ -236,7 +256,6 @@ export const main: Entrypoint = (denops) => {
     // Performance: Pre-calculate derived state to minimize work in hot path
     updateEffectiveStyle();
     borderPropCache = options.border !== "none" ? BORDER_PROPS.default : BORDER_PROPS.none;
-    borderHighlightCache = [options.highlight];
     borderCharsCache = getVimBorderChars(options.border);
     refreshCachedPositions();
   };
@@ -353,6 +372,13 @@ export const main: Entrypoint = (denops) => {
       loadOptions(),
       updateDimensions(),
       ensureVimPopup(),
+      batch.batch(denops, (helper) => {
+        for (const mode of MODE_CATEGORIES) {
+          helper.cmd(
+            `hi default link ${PLUGIN_HIGHLIGHT_GROUPS[mode]} ${DEFAULT_HIGHLIGHT_LINKS[mode]}`,
+          );
+        }
+      }),
     ]);
 
     if (denops.meta.host === "nvim") {
@@ -458,6 +484,19 @@ export const main: Entrypoint = (denops) => {
   // Track the timer for closing the window
   let timerId: number | undefined;
 
+  const resolveHighlightGroup = (
+    highlight: string | Record<ModeCategory, string>,
+    mode: ModeCategory,
+  ): string => {
+    if (typeof highlight === "string") {
+      if (highlight === "Normal") {
+        return PLUGIN_HIGHLIGHT_GROUPS[mode];
+      }
+      return highlight;
+    }
+    return highlight[mode] ?? PLUGIN_HIGHLIGHT_GROUPS[mode];
+  };
+
   const showToast = async (
     denops: Denops,
     modeCategory: ModeCategory,
@@ -470,6 +509,8 @@ export const main: Entrypoint = (denops) => {
     let content: string[] = [];
     let windowWidth: number;
     let windowHeight: number;
+
+    const highlightGroup = resolveHighlightGroup(options.highlight, modeCategory);
 
     // Performance: Use pre-calculated effectiveStyle to avoid redundant work
     const style = effectiveStyle;
@@ -517,8 +558,8 @@ export const main: Entrypoint = (denops) => {
         line: row,
         col,
         border: borderPropCache,
-        highlight: options.highlight,
-        borderhighlight: borderHighlightCache,
+        highlight: highlightGroup,
+        borderhighlight: [highlightGroup],
         ...(borderCharsCache ? { borderchars: borderCharsCache } : {}),
       };
 
@@ -584,7 +625,7 @@ export const main: Entrypoint = (denops) => {
             row,
             col,
             options.border,
-            options.highlight,
+            highlightGroup,
             lastNvimWinid ?? null,
           ],
         );

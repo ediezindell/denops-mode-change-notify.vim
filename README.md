@@ -47,7 +47,11 @@ let g:mode_change_notify_options = {
 \ 'border': 'double',
 \ 'timeout': 750,
 \ 'position': 'bottom_right',
-\ 'highlight': 'Normal',
+\ 'highlight': {
+\   'n': 'DenopsModeNotifyNormal',
+\   'i': 'DenopsModeNotifyInsert',
+\   'v': 'DenopsModeNotifyVisual',
+\  },
 \ }
 ```
 
@@ -59,11 +63,28 @@ vim.g.mode_change_notify_options = {
   border = "double",
   timeout = 750,
   position = "bottom_right",
-  highlight = "Normal",
+  highlight = {
+    n = "DenopsModeNotifyNormal",
+    i = "DenopsModeNotifyInsert",
+    v = "DenopsModeNotifyVisual",
+  },
 }
 ```
 
 **Note:** The `ascii_filled` style requires a [Nerd Font](https://www.nerdfonts.com/).
+
+### Default Highlights
+
+The plugin provides default highlight groups that are linked to standard Vim groups. You can override these links or provide your own highlight groups in the configuration.
+
+| Mode | Default Plugin Highlight | Default Link |
+| --- | --- | --- |
+| Normal (`n`) | `DenopsModeNotifyNormal` | `ModeMsg` |
+| Insert (`i`) | `DenopsModeNotifyInsert` | `Type` |
+| Visual (`v`) | `DenopsModeNotifyVisual` | `Statement` |
+| Command (`c`) | `DenopsModeNotifyCommand` | `Constant` |
+| Terminal (`t`) | `DenopsModeNotifyTerminal` | `Constant` |
+| Replace (`r`) | `DenopsModeNotifyReplace` | `Special` |
 
 ## Mappings
 
