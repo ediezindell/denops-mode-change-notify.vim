@@ -436,17 +436,16 @@ export const main: Entrypoint = (denops) => {
     // These allow forcing a notification for a specific mode category,
     // which is useful for snapshot testing or manual verification.
     const mapPrefixes = ["", "i", "c", "t"];
-    await batch.collect(denops, (helper) => {
+    await batch.batch(denops, async (helper) => {
       for (const mode of MODE_CATEGORIES) {
         const cmd =
           `<Cmd>call denops#notify('${denops.name}', 'show', ['${mode}'])<CR>`;
         for (const prefix of mapPrefixes) {
-          helper.cmd(
+          await helper.cmd(
             `${prefix}noremap <silent> <Plug>(mode-change-notify-${mode}) ${cmd}`,
           );
         }
       }
-      return [];
     });
   };
 
