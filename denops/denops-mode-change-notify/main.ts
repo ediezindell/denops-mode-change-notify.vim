@@ -285,9 +285,9 @@ export const main: Entrypoint = (denops) => {
   const ensureVimPopup = async () => {
     if (denops.meta.host !== "vim") return;
     if (vimPopupWinid) return;
-    vimPopupWinid = await denops.call("popup_create", [], {
+    vimPopupWinid = (await denops.call("popup_create", [], {
       hidden: true,
-    }) as number;
+    })) as number;
   };
 
   const updateDimensions = async () => {
@@ -297,7 +297,10 @@ export const main: Entrypoint = (denops) => {
     if (denops.meta.host === "nvim") {
       try {
         const uis = await denops.call("luaeval", "vim.api.nvim_list_uis()");
-        assert(uis, is.ArrayOf(is.ObjectOf({ width: is.Number, height: is.Number })));
+        assert(
+          uis,
+          is.ArrayOf(is.ObjectOf({ width: is.Number, height: is.Number })),
+        );
         if (uis.length > 0) {
           cols = uis[0].width;
           lines = uis[0].height;
@@ -305,6 +308,14 @@ export const main: Entrypoint = (denops) => {
       } catch (_) {
         // ignore: fallback handled below
       }
+    } else {
+      // Performance: Batch ambiwidth with screen dimensions to reduce RPC calls
+      const result = await denops.eval("[&columns, &lines, &ambiwidth]");
+      assert(result, is.ArrayOf(is.UnionOf([is.Number, is.String])));
+      const [colsEval, linesEval, ambi] = result;
+      cols = colsEval as number;
+      lines = linesEval as number;
+      currentAmbiwidth = ambi as string;
     }
 
     if (cols === undefined || lines === undefined) {
@@ -349,11 +360,7 @@ export const main: Entrypoint = (denops) => {
   };
 
   const setupAutocommands = async () => {
-    await Promise.all([
-      loadOptions(),
-      updateDimensions(),
-      ensureVimPopup(),
-    ]);
+    await Promise.all([loadOptions(), updateDimensions(), ensureVimPopup()]);
 
     if (denops.meta.host === "nvim") {
       await denops.call(
@@ -557,10 +564,10 @@ export const main: Entrypoint = (denops) => {
 
       // Create buffer if missing
       if (!bufnr) {
-        bufnr = await denops.call(
+        bufnr = (await denops.call(
           "luaeval",
           "_G.DenopsModeChangeNotify.create_buffer()",
-        ) as number;
+        )) as number;
         cached.bufnr = bufnr;
         shouldUpdateContent = true;
       }
@@ -593,10 +600,10 @@ export const main: Entrypoint = (denops) => {
         win = await updateWindow(bufnr, shouldUpdateContent);
       } catch (_) {
         // Fallback: Buffer might be invalid. Create new one.
-        bufnr = await denops.call(
+        bufnr = (await denops.call(
           "luaeval",
           "_G.DenopsModeChangeNotify.create_buffer()",
-        ) as number;
+        )) as number;
         cached.bufnr = bufnr;
         win = await updateWindow(bufnr, true);
       }
